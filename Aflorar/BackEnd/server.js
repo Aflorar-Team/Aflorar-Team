@@ -20,7 +20,7 @@ const supabase = createClient(
 app.use(express.static(path.join(__dirname, "../FrontEnd")));
 app.use("/Css", express.static(path.join(__dirname, "../Css")));
 app.use("/Js", express.static(path.join(__dirname, "../Js")));
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: "https://aflorar-team.vercel.app/" }));
 app.use(express.json());
 
 const INSTRUCAO_FLORA = `
