@@ -1,0 +1,9 @@
+# Variáveis de ambiente (NUNCA subir)
+BackEnd/.env
+
+# Dependências do Node (pesadas, desnecessário subir)
+BackEnd/node_modules/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
