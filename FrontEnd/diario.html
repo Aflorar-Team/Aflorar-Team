@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Diário</title>
+  <link rel="stylesheet" href="./Css/global.css">
+  <link rel="stylesheet" href="./Css/diario.css">
+</head>
+
+<body>
+
+  <h2 class="sr-only">Diário das Emoções — Aflorar</h2>
+
+  <nav class="navbar">
+    <div class="logo">Aflorar</div>
+    <div class="menu">
+      <a href="./inicio.html">🏠 Início</a>
+      <a href="./chat.html">💼 Flora</a>
+      <a href="./jardim.html">🌿 Jardim</a>
+      <a href="./diario.html" class="active">📔 Diário</a>
+    </div>
+    <div class="profile">👤</div>
+  </nav>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title">Páginas</div>
+      <button class="new-page-btn" onclick="newPage()">+ Nova página</button>
+      <div id="pagesList"></div>
+    </aside>
+
+    <div class="main">
+      <div class="paper">
+        <div class="paper-header">
+          <span class="paper-date" id="paperDate"></span>
+          <div class="mood-trigger-wrap">
+            <button class="mood-trigger" id="moodTrigger" onclick="toggleMoodDropdown()">
+              <span class="current-emoji" id="currentEmoji">🙂</span>
+              <span id="currentMoodLabel">Como você está?</span>
+              <span class="arrow">▾</span>
+            </button>
+            <div class="mood-dropdown" id="moodDropdown">
+              <div class="mood-grid" id="moodGrid"></div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="writing-box">
+          <textarea class="lined-textarea" id="diaryText" rows="9"
+            placeholder="Escreva sobre o seu dia, pensamentos ou sentimentos..."></textarea>
+        </div>
+
+        <hr class="divider">
+
+        <div>
+          <div class="tags-label">Gatilhos emocionais</div>
+          <div class="tags-row">
+            <span class="tag" onclick="toggleTag(this)">trabalho</span>
+            <span class="tag" onclick="toggleTag(this)">relacionamentos</span>
+            <span class="tag" onclick="toggleTag(this)">saúde</span>
+            <span class="tag" onclick="toggleTag(this)">sono</span>
+            <span class="tag" onclick="toggleTag(this)">família</span>
+            <span class="tag" onclick="toggleTag(this)">finanças</span>
+            <span class="tag" onclick="toggleTag(this)">solidão</span>
+            <span class="tag" onclick="toggleTag(this)">conquista</span>
+          </div>
+        </div>
+
+        <button class="save-btn" onclick="savePage()">Salvar página</button>
+        <div class="toast" id="toast">Página salva! 🌱</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="page-footer">© 2024 Aflorar. Todos os direitos reservados.</footer>
+
+  <script src="Js/diario.js"></script>
+</body>
+
+</html>

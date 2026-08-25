@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Psicólogo - Aflorar</title>
+  <link rel="stylesheet" href="./Css/login.css">
+  <link rel="stylesheet" href="./Css/global.css">
+</head>
+<body>
+
+  <div class="background">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+  </div>
+
+  <header>
+    <h1 class="logo">Aflorar</h1>
+    <nav>
+      <a href="#">Sobre</a>
+      <a href="#">Contato</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="login-card">
+      <h2>Área do Psicólogo</h2>
+
+      <form id="formLoginPsicologo">
+        <label>E-mail</label>
+        <div class="input-group">
+          <input type="email" id="email" placeholder="exemplo@email.com">
+        </div>
+
+        <label>Senha</label>
+        <div class="input-group">
+          <input type="password" id="password" placeholder="Sua senha">
+          <button type="button" id="togglePassword"></button>
+        </div>
+
+        <a href="#" class="forgot">Esqueceu a senha?</a>
+
+        <button type="submit" class="btn-primary">Entrar</button>
+
+        <p id="mensagemErro" style="color:red; display:none;"></p>
+
+        <p class="register">
+          Ainda não tem uma conta? <a href="./cadastro_psicologo.html">Registre-se</a>
+        </p>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    © 2025 Aflorar. Todos os direitos reservados.
+  </footer>
+
+  <script src="./Js/login-psicologo.js"></script>
+</body>
+</html>
