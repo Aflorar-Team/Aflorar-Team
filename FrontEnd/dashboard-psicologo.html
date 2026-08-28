@@ -4,17 +4,17 @@
   <meta charset="UTF-8">
   <title>Dashboard - Aflorar</title>
   <link rel="stylesheet" href="./Css/global.css">
-  <link rel="stylesheet" href="./Css/dashboard.css">
+ <link rel="stylesheet" href="./Css/dashboard.css">
 </head>
 <body>
 
   <header class="navbar">
     <div class="logo">✿ Aflorar</div>
     <nav class="menu">
-      <a href="#" class="active">
+      <a href="./dashboard-psicologo.html" class="active">
         <span class="icon">🏠</span> Início
       </a>
-      <a href="#">
+      <a href="./agenda-psicologo.html">
         <span class="icon">📅</span> Agenda
       </a>
     </nav>
@@ -22,30 +22,22 @@
   </header>
 
   <main>
-    <!-- COLUNA ESQUERDA -->
     <div class="left">
       <div class="boas-vindas">
-        <h2>Bem-Vindo(a)!</h2>
+        <h2 id="boasVindas">Bem-Vindo(a)!</h2>
         <p>Seu esforço não passa despercebido!</p>
       </div>
 
       <div class="acoes">
-        <button class="btn-acao btn-demanda" onclick="window.location.href='#'">
-          Demanda de hoje
-        </button>
-        <button class="btn-acao btn-mensagens" onclick="window.location.href='#'">
-          Mensagens
-        </button>
-        <button class="btn-acao btn-pacientes" onclick="window.location.href='#'">
-          Adicionar Pacientes
-        </button>
+        <button class="btn-acao btn-demanda">Demanda de hoje</button>
+        <button class="btn-acao btn-mensagens">Mensagens</button>
+        <button class="btn-acao btn-pacientes">Adicionar Pacientes</button>
       </div>
     </div>
 
-    <!-- COLUNA DIREITA -->
     <div class="right">
       <h3>Pacientes</h3>
-      <div class="lista-pacientes" id="listaPacientes">
+      <div class="lista-pacientes">
 
         <div class="card-paciente">
           <div class="topo">
@@ -54,7 +46,7 @@
           </div>
           <p class="descricao">Descrição da paciente...</p>
           <div class="acoes-paciente">
-            <button title="Progresso">📈</button>
+            <button title="Editar">✏️</button>
             <button title="Chat">💬</button>
             <button title="Alertas">🔔</button>
             <button title="Notas">📋</button>
@@ -66,9 +58,9 @@
             <span class="tag-nome" style="background:#F4A261">Luan K.</span>
             <span class="tag-horario">Ter. 10:30</span>
           </div>
-          <p class="descricao">Descrição da paciente...</p>
+          <p class="descricao">Descrição do paciente...</p>
           <div class="acoes-paciente">
-            <button title="Progresso">📈</button>
+            <button title="Editar">✏️</button>
             <button title="Chat">💬</button>
             <button title="Alertas">🔔</button>
             <button title="Notas">📋</button>
@@ -80,9 +72,9 @@
             <span class="tag-nome" style="background:#E8717A">João G.</span>
             <span class="tag-horario">Qui. 12:00</span>
           </div>
-          <p class="descricao">Descrição da paciente...</p>
+          <p class="descricao">Descrição do paciente...</p>
           <div class="acoes-paciente">
-            <button title="Progresso">📈</button>
+            <button title="Editar">✏️</button>
             <button title="Chat">💬</button>
             <button title="Alertas">🔔</button>
             <button title="Notas">📋</button>
@@ -95,6 +87,6 @@
 
   <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
 
-  <script src="./Js/dashboard.js"></script>
+  <script src="./Js/dashboard-psicologo.js"></script>
 </body>
 </html>

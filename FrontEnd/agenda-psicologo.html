@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Agenda - Aflorar</title>
+  <link rel="stylesheet" href="./Css/agenda-psicologo.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="logo">✿ Aflorar</div>
+    <nav class="menu">
+      <a href="./dashboard-psicologo.html">
+        <span class="icon">🏠</span> Início
+      </a>
+      <a href="./agenda-psicologo.html" class="active">
+        <span class="icon">📅</span> Agenda
+      </a>
+    </nav>
+    <div></div>
+  </header>
+
+  <main>
+    <div class="calendario">
+      <div class="cal-header">
+        <div class="nav-mes">
+          <button id="btnAnterior">&#8249;</button>
+          <span id="mesAno"></span>
+          <button id="btnProximo">&#8250;</button>
+        </div>
+      </div>
+
+      <div class="grid-semana">
+        <span>DOM</span>
+        <span>SEG</span>
+        <span>TER</span>
+        <span>QUA</span>
+        <span>QUI</span>
+        <span>SEX</span>
+        <span>SAB</span>
+      </div>
+
+      <div class="grid-dias" id="gridDias"></div>
+    </div>
+  </main>
+
+  <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
+
+  <script src="/FrontEnd/Js/agenda-psicologo.js"></script>
+</body>
+</html>

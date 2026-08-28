@@ -1,0 +1,118 @@
+ * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    body { background: #FDF6F0; min-height: 100vh; display: flex; flex-direction: column; }
+ 
+    .navbar {
+      background: #F4A261;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 30px;
+    }
+    .navbar .logo { font-size: 22px; font-weight: bold; color: white; font-style: italic; }
+    .menu { display: flex; gap: 10px; }
+    .menu a {
+      text-decoration: none; color: white; opacity: 0.8;
+      padding: 8px 16px; border-radius: 10px; text-align: center; transition: 0.3s; font-size: 13px;
+    }
+    .menu a .icon { display: block; font-size: 20px; margin-bottom: 2px; }
+    .menu a:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+    .menu a.active { opacity: 1; border-bottom: 2px solid white; border-radius: 0; }
+ 
+    main { flex: 1; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
+ 
+    .calendario {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      width: 100%;
+      max-width: 1000px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+ 
+    .cal-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+ 
+    .cal-header button {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #F4A261;
+      line-height: 1;
+    }
+ 
+    .cal-header span {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      min-width: 180px;
+      text-align: center;
+    }
+ 
+    .grid-semana {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+ 
+    .grid-semana div {
+      font-weight: bold;
+      font-size: 14px;
+      color: #333;
+      padding: 8px 0;
+    }
+ 
+    .grid-dias {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      row-gap: 8px;
+    }
+ 
+    .dia-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+ 
+    .dia {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 15px;
+      color: #333;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+    }
+ 
+    .dia:hover { background: #f0e0d6; }
+    .dia.outro-mes { color: #ccc; }
+    .dia.hoje { background: #4A7C59; color: white; font-weight: bold; }
+    .dia.selecionado { background: #F4A261; color: white; font-weight: bold; }
+ 
+    .dia.tem-consulta::after {
+      content: '';
+      display: block;
+      width: 5px;
+      height: 5px;
+      background: #E8717A;
+      border-radius: 50%;
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+ 
+    .dia.hoje.tem-consulta::after,
+    .dia.selecionado.tem-consulta::after { background: white; }
+ 
+    footer { text-align: center; padding: 15px; font-size: 12px; color: #aaa; }

@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Login - Aflorar</title>
+  <title>Cadastro - Aflorar</title>
   <link rel="stylesheet" href="./Css/login.css">
   <link rel="stylesheet" href="./Css/global.css">
 </head>
@@ -16,18 +16,18 @@
 
   <header>
     <h1 class="logo">Aflorar</h1>
-    <nav>
-      <a href="#">Sobre</a>
-      <a href="#">Contato</a>
-    </nav>
   </header>
 
   <main>
     <div class="login-card">
-      <h2>Bem-vindo(a) de volta</h2>
+      <h2>Crie sua conta</h2>
 
-      <!-- ✅ Adicionado id no form e ids nos inputs -->
-      <form id="formLogin">
+      <form id="formCadastro">
+        <label>Nome</label>
+        <div class="input-group">
+          <input type="text" id="nome" placeholder="Seu nome completo">
+        </div>
+
         <label>E-mail</label>
         <div class="input-group">
           <input type="email" id="email" placeholder="exemplo@email.com">
@@ -35,27 +35,17 @@
 
         <label>Senha</label>
         <div class="input-group">
-          <input type="password" id="password" placeholder="Sua senha">
+          <input type="password" id="password" placeholder="Crie uma senha">
           <button type="button" id="togglePassword"></button>
         </div>
 
-        <a href="#" class="forgot">Esqueceu a senha?</a>
-
-        <!-- ✅ Virou button para o JS capturar -->
-        <button type="submit" class="btn-primary">Entrar</button>
-
-        <!-- ✅ Mensagem de erro -->
         <p id="mensagemErro" style="color:red; display:none;"></p>
+        <p id="mensagemSucesso" style="color:green; display:none;"></p>
 
-        <div class="divider">ou</div>
-
-        <button type="button" class="btn-google">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg"/>
-          Entrar com o Google
-        </button>
+        <button type="submit" class="btn-primary">Registrar</button>
 
         <p class="register">
-          Ainda não tem uma conta? <a href="./cadastro.html">Registre-se</a>
+          Já tem uma conta? <a href="./login-paciente.html">Faça login</a>
         </p>
       </form>
     </div>
@@ -65,6 +55,6 @@
     © 2025 Aflorar. Todos os direitos reservados.
   </footer>
 
-  <script src="./Js/login.js"></script>
+  <script src="./Js/cadastro-paciente.js"></script>
 </body>
 </html>
