@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Anotações - Aflorar</title>
+ <link rel="stylesheet" href="./Css/anotacoes.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="logo">✿ Aflorar</div>
+    <nav class="menu">
+      <a href="./dashboard-psicologo.html">
+        <span class="icon">🏠</span> Início
+      </a>
+      <a href="./agenda-psicologo.html">
+        <span class="icon">📅</span> Agenda
+      </a>
+    </nav>
+    <div style="width:40px"></div>
+  </header>
+
+  <main>
+    <!-- FERRAMENTAS -->
+    <div class="ferramentas">
+      <div class="boas-vindas">
+        <h2>Bem-Vindo(a)!</h2>
+        <p>Seu esforço não passa despercebido!</p>
+      </div>
+
+      <div class="grupo-ferramenta">
+
+        <button class="btn-ferramenta" id="btnDestacar" onclick="aplicar('destacar')">
+          <div class="icone-visual destacar-visual">🖊 Destacar</div>
+          <span class="label">Destacar</span>
+        </button>
+
+        <button class="btn-ferramenta" id="btnNegrito" onclick="aplicar('negrito')">
+          <div class="icone-visual negrito-visual">B</div>
+          <span class="label">Negrito</span>
+        </button>
+
+        <button class="btn-ferramenta" id="btnItalico" onclick="aplicar('italico')">
+          <div class="icone-visual italico-visual">I</div>
+          <span class="label">Itálico</span>
+        </button>
+
+        <div class="tamanho-wrapper">
+          <label>Tamanho da fonte</label>
+          <select id="tamanhoFonte" onchange="mudarTamanho(this.value)">
+            <option value="12">12px — Pequeno</option>
+            <option value="15" selected>15px — Normal</option>
+            <option value="18">18px — Médio</option>
+            <option value="22">22px — Grande</option>
+          </select>
+        </div>
+
+        <button class="btn-exportar" onclick="exportarPDF()">⬇ Exportar PDF</button>
+      </div>
+    </div>
+
+    <!-- BLOCO DE NOTAS -->
+    <div class="bloco-notas">
+      <div class="bloco-header">
+        <h2>Anotações dos Pacientes</h2>
+        <button class="btn-salvar-icon" onclick="salvarLocal()" title="Salvar">💾</button>
+      </div>
+
+      <textarea class="editor" id="editor" placeholder="Comece a digitar suas anotações aqui..."></textarea>
+
+      <div class="toast-salvo" id="toastSalvo">✅ Anotações salvas!</div>
+    </div>
+  </main>
+
+  <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="./Js/anotacoes-psicologo.js"></script>
+</body>
+</html>

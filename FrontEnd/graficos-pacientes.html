@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gráficos do Paciente - Aflorar</title>
+  <link rel="stylesheet" href="./Css/graficos.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="logo">✿ Aflorar</div>
+    <nav class="menu">
+      <a href="./dashboard-psicologo.html">
+        <span class="icon">🏠</span> Início
+      </a>
+      <a href="./agenda-psicologo.html">
+        <span class="icon">📅</span> Agenda
+      </a>
+    </nav>
+    <div></div>
+  </header>
+
+  <main>
+    <div class="topo">
+      <div class="titulo-card">Analise os gráficos!</div>
+      <div class="filtros">
+        <button class="btn-filtro mensal ativo" onclick="trocarFiltro('mensal', this)">Mensal</button>
+        <button class="btn-filtro semanal" onclick="trocarFiltro('semanal', this)">Semanal</button>
+        <button class="btn-filtro diario" onclick="trocarFiltro('diario', this)">Diário</button>
+      </div>
+    </div>
+
+    <div class="card-grafico">
+      <h2>Gráficos do seu paciente</h2>
+
+      <div class="estado-vazio" id="estadoVazio">
+        <div class="icone">🥧</div>
+        <h3>Gere os gráficos</h3>
+        <p>Observe os dados para uma melhor análise</p>
+        <button class="btn-gerar" onclick="gerarGraficos()">Gerar Gráficos</button>
+      </div>
+
+      <div class="grafico-wrapper" id="graficoWrapper">
+        <canvas id="graficoHumor"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
+
+  <script src="./Js/graficos.js"></script>
+</body>
+</html>
