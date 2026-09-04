@@ -1,78 +1,73 @@
-  let chartInstance = null;
-    let filtroAtual = "mensal";
- 
+const emocoes = [
+      { nome: "Feliz",      emoji: "😊", cor: "#4A7C59" },
+      { nome: "Radiante",   emoji: "😁", cor: "#E9B949" },
+      { nome: "Neutro",     emoji: "😐", cor: "#7C8798" },
+      { nome: "Irritado",   emoji: "😠", cor: "#8B2020" },
+      { nome: "Triste",     emoji: "😢", cor: "#3B5EA6" },
+      { nome: "Ansioso",    emoji: "😰", cor: "#D4853A" },
+      { nome: "Estressado", emoji: "😵", cor: "#B05D3B" },
+      { nome: "Depressivo", emoji: "😞", cor: "#596275" },
+      { nome: "Inseguro",   emoji: "😟", cor: "#8A6D3B" },
+      { nome: "Cansado",    emoji: "😴", cor: "#B8860B" },
+      { nome: "Desmotivado",emoji: "😶", cor: "#6B7280" },
+      { nome: "Preocupado", emoji: "😧", cor: "#7B5EA6" },
+    ];
+
     const dados = {
-      mensal: {
-        labels: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul"],
-        valores: [5, 6, 4, 7, 6, 8, 7],
-      },
-      semanal: {
-        labels: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
-        valores: [6, 5, 7, 6, 8, 7, 6],
-      },
-      diario: {
-        labels: ["08h", "10h", "12h", "14h", "16h", "18h", "20h"],
-        valores: [4, 6, 7, 5, 8, 6, 7],
-      },
+      mensal:  [18, 14, 10, 9, 8, 11, 7, 5, 6, 5, 4, 3],
+      semanal: [22, 16, 8,  7, 9, 12, 6, 4, 5, 4, 4, 3],
+      diario:  [20, 18, 10, 8, 10, 12, 5, 4, 5, 3, 3, 2],
     };
- 
-    function trocarFiltro(filtro, btn) {
-      filtroAtual = filtro;
-      document.querySelectorAll(".btn-filtro").forEach(b => b.classList.remove("ativo"));
-      btn.classList.add("ativo");
- 
-      // Se o gráfico já está visível, atualiza
-      if (document.getElementById("graficoWrapper").style.display === "block") {
-        gerarGraficos();
-      }
+
+    let chartInstance = null;
+
+    function renderLegenda() {
+      const legenda = document.getElementById("legenda");
+      legenda.innerHTML = emocoes.map(e => `
+        <div class="legenda-item">
+          <div class="legenda-cor" style="background:${e.cor}"></div>
+          <span class="legenda-emoji">${e.emoji}</span>
+          <span>${e.nome}</span>
+        </div>
+      `).join("");
     }
- 
-    function gerarGraficos() {
-      document.getElementById("estadoVazio").style.display = "none";
-      document.getElementById("graficoWrapper").style.display = "block";
- 
-      const d = dados[filtroAtual];
- 
-      if (chartInstance) chartInstance.destroy();
- 
+
+    function renderGrafico(filtro) {
       const ctx = document.getElementById("graficoHumor").getContext("2d");
+      if (chartInstance) chartInstance.destroy();
+
       chartInstance = new Chart(ctx, {
-        type: "line",
+        type: "doughnut",
         data: {
-          labels: d.labels,
+          labels: emocoes.map(e => e.nome),
           datasets: [{
-            label: "Nível de Humor",
-            data: d.valores,
-            borderColor: "#E8717A",
-            backgroundColor: "rgba(232, 113, 122, 0.15)",
-            pointBackgroundColor: "#F4A261",
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            tension: 0.4,
-            fill: true,
+            data: dados[filtro],
+            backgroundColor: emocoes.map(e => e.cor),
+            borderWidth: 2,
+            borderColor: "#fff",
+            hoverOffset: 10,
           }]
         },
         options: {
           responsive: true,
+          cutout: "55%",
           plugins: {
-            legend: { display: true, position: "top" },
+            legend: { display: false },
             tooltip: {
               callbacks: {
-                label: ctx => ` Humor: ${ctx.parsed.y}/10`
+                label: ctx => ` ${ctx.label}: ${ctx.parsed}%`
               }
-            }
-          },
-          scales: {
-            y: {
-              min: 0,
-              max: 10,
-              ticks: { stepSize: 2 },
-              title: { display: true, text: "Nível (0-10)" }
-            },
-            x: {
-              title: { display: true, text: filtroAtual.charAt(0).toUpperCase() + filtroAtual.slice(1) }
             }
           }
         }
       });
     }
+
+    function trocarFiltro(filtro, btn) {
+      document.querySelectorAll(".btn-filtro").forEach(b => b.classList.remove("ativo"));
+      btn.classList.add("ativo");
+      renderGrafico(filtro);
+    }
+
+    renderLegenda();
+    renderGrafico("mensal");

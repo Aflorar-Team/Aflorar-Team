@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Gráficos do Paciente - Aflorar</title>
-  <link rel="stylesheet" href="./Css/graficos.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="./Css/graficos.css">
 </head>
 <body>
 
@@ -18,7 +18,7 @@
         <span class="icon">📅</span> Agenda
       </a>
     </nav>
-    <div></div>
+    <div style="width:40px"></div>
   </header>
 
   <main>
@@ -34,15 +34,12 @@
     <div class="card-grafico">
       <h2>Gráficos do seu paciente</h2>
 
-      <div class="estado-vazio" id="estadoVazio">
-        <div class="icone">🥧</div>
-        <h3>Gere os gráficos</h3>
-        <p>Observe os dados para uma melhor análise</p>
-        <button class="btn-gerar" onclick="gerarGraficos()">Gerar Gráficos</button>
-      </div>
+      <div class="grafico-layout">
+        <div class="canvas-wrapper">
+          <canvas id="graficoHumor"></canvas>
+        </div>
 
-      <div class="grafico-wrapper" id="graficoWrapper">
-        <canvas id="graficoHumor"></canvas>
+        <div class="legenda" id="legenda"></div>
       </div>
     </div>
   </main>
