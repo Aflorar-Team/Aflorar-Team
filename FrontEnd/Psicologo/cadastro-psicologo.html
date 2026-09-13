@@ -1,36 +1,50 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
-  <title>Cadastro - Aflorar</title>
-  <link rel="stylesheet" href="./Css/login.css">
-  <link rel="stylesheet" href="./Css/global.css">
+  <title>Cadastro Psicólogo - Aflorar</title>
+  <link rel="stylesheet" href="../Css/login.css">
+  <link rel="stylesheet" href="../Css/global.css">
 </head>
+
 <body>
 
-  <div class="background">
+  <div class="background" aria-hidden="true">
     <div class="blob blob1"></div>
     <div class="blob blob2"></div>
     <div class="blob blob3"></div>
   </div>
 
-  <header>
-    <h1 class="logo">Aflorar</h1>
+  <header class="topbar">
+    <div class="logo-wrap">
+      <h1 class="logo">Aflorar</h1>
+    </div>
   </header>
 
-  <main>
+  <main class="auth-page">
     <div class="login-card">
       <h2>Crie sua conta</h2>
 
-      <form id="formCadastro">
-        <label>Nome</label>
+      <form id="formCadastroPsicologo">
+        <label>CPF</label>
         <div class="input-group">
-          <input type="text" id="nome" placeholder="Seu nome completo">
+          <input type="text" id="cpf" placeholder="000.000.000-00">
+        </div>
+
+        <label>CRP</label>
+        <div class="input-group">
+          <input type="text" id="crp" placeholder="Ex: 06/123456">
         </div>
 
         <label>E-mail</label>
         <div class="input-group">
           <input type="email" id="email" placeholder="exemplo@email.com">
+        </div>
+
+        <label>Número de telefone</label>
+        <div class="input-group">
+          <input type="tel" id="telefone" placeholder="(00) 00000-0000">
         </div>
 
         <label>Senha</label>
@@ -45,16 +59,17 @@
         <button type="submit" class="btn-primary">Registrar</button>
 
         <p class="register">
-          Já tem uma conta? <a href="./login-paciente.html">Faça login</a>
+          Já tem uma conta? <a href="./login-psicologo.html">Faça login</a>
         </p>
       </form>
     </div>
   </main>
 
-  <footer>
+  <footer class="page-footer">
     © 2025 Aflorar. Todos os direitos reservados.
   </footer>
 
-  <script src="./Js/cadastro-paciente.js"></script>
+  <script src="../Js/cadastro-psicologo.js"></script>
 </body>
+
 </html>

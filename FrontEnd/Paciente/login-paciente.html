@@ -1,32 +1,38 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
-  <title>Login Psicólogo - Aflorar</title>
-  <link rel="stylesheet" href="./Css/login.css">
-  <link rel="stylesheet" href="./Css/global.css">
+  <title>Login - Aflorar</title>
+  <link rel="stylesheet" href="../Css/login.css">
+  <link rel="stylesheet" href="../Css/global.css">
 </head>
+
 <body>
 
-  <div class="background">
+  <div class="background" aria-hidden="true">
     <div class="blob blob1"></div>
     <div class="blob blob2"></div>
     <div class="blob blob3"></div>
   </div>
 
-  <header>
-    <h1 class="logo">Aflorar</h1>
-    <nav>
+  <header class="topbar">
+    <div class="logo-wrap">
+      <h1 class="logo">Aflorar</h1>
+    </div>
+
+    <nav class="top-nav" aria-label="Navegação principal">
       <a href="#">Sobre</a>
       <a href="#">Contato</a>
     </nav>
   </header>
 
-  <main>
+  <main class="auth-page">
     <div class="login-card">
-      <h2>Área do Psicólogo</h2>
+      <h2>Bem-vindo(a) de volta</h2>
 
-      <form id="formLoginPsicologo">
+      <!-- ✅ Adicionado id no form e ids nos inputs -->
+      <form id="formLogin">
         <label>E-mail</label>
         <div class="input-group">
           <input type="email" id="email" placeholder="exemplo@email.com">
@@ -40,21 +46,31 @@
 
         <a href="#" class="forgot">Esqueceu a senha?</a>
 
+        <!-- ✅ Virou button para o JS capturar -->
         <button type="submit" class="btn-primary">Entrar</button>
 
+        <!-- ✅ Mensagem de erro -->
         <p id="mensagemErro" style="color:red; display:none;"></p>
 
+        <div class="divider">ou</div>
+
+        <button type="button" class="btn-google">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" />
+          Entrar com o Google
+        </button>
+
         <p class="register">
-          Ainda não tem uma conta? <a href="./cadastro-psicologo.html">Registre-se</a>
+          Ainda não tem uma conta? <a href="./cadastro-paciente.html">Registre-se</a>
         </p>
       </form>
     </div>
   </main>
 
-  <footer>
+  <footer class="page-footer">
     © 2025 Aflorar. Todos os direitos reservados.
   </footer>
 
-  <script src="./Js/login-psicologo.js"></script>
+  <script src="../Js/login-paciente.js"></script>
 </body>
+
 </html>
