@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Configurações - Aflorar</title>
+    <link rel="stylesheet" href="../Css/config.css" />
+  <body>
+    <!-- NAVBAR -->
+    <header class="navbar">
+      <div class="nav-acoes">
+        <button
+          class="nav-btn"
+          onclick="alert('Nenhuma notificação no momento.')"
+        >
+          <span class="icone">🔔</span>
+          Notificação
+        </button>
+        <button class="nav-btn" id="btnModoEscuro" onclick="alternarModo()">
+          <span class="icone">🌙</span>
+          Modo escuro
+        </button>
+        <button class="nav-btn" onclick="sair()">
+          <span class="icone">🚪</span>
+          Sair da conta
+        </button>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="hero-left">
+        <div class="hero-logo">✿ Aflorar</div>
+      </div>
+      <div class="hero-center"></div>
+      <div class="hero-right">
+        <!-- Adicione os ícones aqui -->
+      </div>
+    </div>
+
+    <!-- FORMULÁRIO -->
+    <div class="form-container">
+      <div class="form-grid">
+        <div class="campo">
+          <label>CPF</label>
+          <input
+            type="text"
+            id="cpf"
+            placeholder="000.000.000-00"
+            maxlength="14"
+          />
+        </div>
+
+        <div class="campo">
+          <label>CRP</label>
+          <input type="text" id="crp" placeholder="000.000.000-00" />
+        </div>
+
+        <div class="campo">
+          <label>Senha</label>
+          <div class="input-icon">
+            <span>✉️</span>
+            <input type="password" id="senha" placeholder="•••••••" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="exemplo@email.com" />
+        </div>
+
+        <div class="campo">
+          <label>Confirme sua Senha</label>
+          <div class="input-icon">
+            <span>🔒</span>
+            <input type="password" id="confirmarSenha" placeholder="•••••••" />
+          </div>
+        </div>
+
+        <div class="campo">
+          <label>Número</label>
+          <input type="tel" id="telefone" placeholder="(00) 00000-0000" />
+        </div>
+      </div>
+
+      <div class="acoes">
+        <button class="btn-voltar" onclick="window.history.back()">←</button>
+        <button class="btn-editar" onclick="salvarDados()">Editar dados</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
+    <script src="../Js/config.js"></script>
+  </body>
+</html>
