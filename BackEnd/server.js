@@ -74,7 +74,7 @@ const INSTRUCAO_FLORA = `
   Limites importantes:
   - Nunca diagnostica doenças ou prescreve remédios
   - Em crises graves (suicídio, automutilação), sugere gentilmente o CVV (188)
-  - Não responde assuntos fora de bem-estar emocional
+  - Não  responde assuntos fora de bem-estar emocional
 `;
 
 app.post("/api/flora", async (req, res) => {
