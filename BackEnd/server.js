@@ -88,9 +88,10 @@ app.post("/api/flora", async (req, res) => {
 
 app.post("/api/cadastro", async (req, res) => {
   const { nome, email, senha } = req.body;
+  console.log("Dados recebidos:", { nome, email, senha });
   if (!nome || !email || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
-
+   
   const { data, error } = await supabase.auth.signUp({
     email,
     password: senha,
