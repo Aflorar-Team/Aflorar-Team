@@ -30,6 +30,9 @@ const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_KEY
 console.log("Supabase URL:", process.env.SUPABASE_URL ? "✅ OK" : "❌ AUSENTE");
 console.log("Supabase KEY:", process.env.SUPABASE_KEY ? "✅ OK" : "❌ AUSENTE");
 
+const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
+const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
+
 app.use(express.static(path.join(__dirname, "../FrontEnd")));
 app.use("/Css", express.static(path.join(__dirname, "../Css")));
 app.use("/Js", express.static(path.join(__dirname, "../Js")));
@@ -39,10 +42,10 @@ const origensPermitidas = [
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    
-    const permitida = origensPermitidas.some(o => 
+
+    const permitida = origensPermitidas.some(o =>
       typeof o === "string" ? o === origin : o.test(origin)
     );
 
@@ -109,12 +112,21 @@ app.post("/api/flora", async (req, res) => {
 });
 
 app.post("/api/cadastro-paciente", async (req, res) => {
-  const { nome, email, senha } = req.body;
+  const { nome, email, senha, cpf, telefone } = req.body;
 
-  console.log("Dados recebidos:", { nome, email, senha });
-
-  if (!nome || !email || !senha)
+  if (!nome || !email || !senha || !cpf || !telefone)
     return res.status(400).json({ erro: "Preencha todos os campos." });
+
+  const cpfLimpo = normalizarCpf(cpf);
+  const telefoneLimpo = normalizarTelefone(telefone);
+
+  if (cpfLimpo.length !== 11) {
+    return res.status(400).json({ erro: "CPF inválido." });
+  }
+
+  if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+    return res.status(400).json({ erro: "Telefone inválido." });
+  }
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
     return res.status(500).json({
@@ -126,10 +138,8 @@ app.post("/api/cadastro-paciente", async (req, res) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password: senha,
-      options: { data: { nome } },
+      options: { data: { nome, cpf: cpfLimpo, telefone: telefoneLimpo, tipo: "paciente" } },
     });
-
-    console.log("Resposta Supabase:", { data, error });
 
     if (error) {
       return res.status(400).json({
@@ -147,9 +157,12 @@ app.post("/api/cadastro-paciente", async (req, res) => {
 });
 
 app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
-  const { email, senha } = req.body;
-  if (!email || !senha)
+  const { email, senha, cpf, telefone } = req.body;
+  if (!email || !senha || !cpf || !telefone)
     return res.status(400).json({ erro: "Preencha todos os campos." });
+
+  const cpfLimpo = normalizarCpf(cpf);
+  const telefoneLimpo = normalizarTelefone(telefone);
 
   if (!supabase) {
     return res.status(500).json({
@@ -163,7 +176,15 @@ app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
       password: senha,
     });
 
-    if (error) return res.status(400).json({ erro: "Email ou senha inválidos." });
+    if (error) return res.status(400).json({ erro: "Email, CPF, telefone ou senha inválidos." });
+
+    const cpfUsuario = normalizarCpf(data.user.user_metadata?.cpf || "");
+    const telefoneUsuario = normalizarTelefone(data.user.user_metadata?.telefone || "");
+
+    if (cpfUsuario !== cpfLimpo || telefoneUsuario !== telefoneLimpo) {
+      return res.status(403).json({ erro: "CPF ou telefone não conferem com esta conta." });
+    }
+
     return res.json({
       mensagem: "Login realizado com sucesso!",
       usuario: data.user,
@@ -191,16 +212,34 @@ app.post("/api/cadastro-psicologo", async (req, res) => {
 });
 
 app.post("/api/login-psicologo", async (req, res) => {
-  const { email, senha } = req.body;
-  if (!email || !senha)
+  const { email, senha, cpf, telefone } = req.body;
+  if (!email || !senha || !cpf || !telefone)
     return res.status(400).json({ erro: "Preencha todos os campos." });
+
+  const cpfLimpo = normalizarCpf(cpf);
+  const telefoneLimpo = normalizarTelefone(telefone);
+
+  if (cpfLimpo.length !== 11) {
+    return res.status(400).json({ erro: "CPF inválido." });
+  }
+
+  if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+    return res.status(400).json({ erro: "Telefone inválido." });
+  }
 
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password: senha,
   });
 
-  if (error) return res.status(400).json({ erro: "Email ou senha inválidos." });
+  if (error) return res.status(400).json({ erro: "Email, CPF, telefone ou senha inválidos." });
+
+  const cpfUsuario = normalizarCpf(data.user.user_metadata?.cpf || "");
+  const telefoneUsuario = normalizarTelefone(data.user.user_metadata?.telefone || "");
+
+  if (cpfUsuario !== cpfLimpo || telefoneUsuario !== telefoneLimpo) {
+    return res.status(403).json({ erro: "CPF ou telefone não conferem com esta conta." });
+  }
 
   // Verifica se é realmente psicólogo
   const tipo = data.user.user_metadata?.tipo;
