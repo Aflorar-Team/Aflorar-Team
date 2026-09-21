@@ -20,7 +20,26 @@ const supabase = createClient(
 app.use(express.static(path.join(__dirname, "../FrontEnd")));
 app.use("/Css", express.static(path.join(__dirname, "../Css")));
 app.use("/Js", express.static(path.join(__dirname, "../Js")));
-app.use(cors({ origin: "https://aflorar-team.vercel.app/" }));
+const origensPermitidas = [
+  "https://aflorar-team.vercel.app",
+  /https:\/\/aflorar-team-.*\.vercel\.app/  // aceita qualquer branch do vercel
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    
+    const permitida = origensPermitidas.some(o => 
+      typeof o === "string" ? o === origin : o.test(origin)
+    );
+
+    if (permitida) {
+      callback(null, true);
+    } else {
+      callback(new Error("Bloqueado pelo CORS"));
+    }
+  }
+}));
 app.use(express.json());
 
 const INSTRUCAO_FLORA = `

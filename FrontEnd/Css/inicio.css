@@ -10,10 +10,14 @@ header {
   padding: 15px;
 }
 
-.profile {
-  font-size: 20px;
-  cursor: pointer;
-}
+  .foto-paciente {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #FDF6F0;
+    flex-shrink: 0;
+  }
 
 .welcome {
   background: #fff;
