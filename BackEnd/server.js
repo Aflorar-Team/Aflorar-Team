@@ -12,10 +12,21 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY,
-);
+const envFaltando = [
+  "SUPABASE_URL",
+  "SUPABASE_KEY",
+  "GEMINI_API_KEY",
+].filter((chave) => !process.env[chave]);
+
+if (envFaltando.length) {
+  console.warn(
+    `⚠️ Variáveis de ambiente ausentes: ${envFaltando.join(", ")}. Configure no Render para evitar falhas em deploy.`
+  );
+}
+
+const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_KEY
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+  : null;
 
 app.use(express.static(path.join(__dirname, "../FrontEnd")));
 app.use("/Css", express.static(path.join(__dirname, "../Css")));
@@ -41,6 +52,15 @@ app.use(cors({
   }
 }));
 app.use(express.json());
+
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+    return res.status(400).json({ erro: "JSON inválido. Verifique os dados enviados." });
+  }
+
+  console.error("Erro interno do servidor:", error);
+  return res.status(500).json({ erro: "Erro interno do servidor." });
+});
 
 const INSTRUCAO_FLORA = `
   Você é a Flora, assistente virtual da plataforma Aflorar.
@@ -88,40 +108,69 @@ app.post("/api/flora", async (req, res) => {
 
 app.post("/api/cadastro-paciente", async (req, res) => {
   const { nome, email, senha } = req.body;
-  
+
   console.log("Dados recebidos:", { nome, email, senha });
 
   if (!nome || !email || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
-   
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password: senha,
-    options: { data: { nome } },
-  });
 
- console.log("Resposta Supabase:", { data, error });
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+    return res.status(500).json({
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+    });
+  }
 
-  if (error) return res.status(400).json({ erro: error.message });
-  res.json({ mensagem: "Cadastro realizado com sucesso!", usuario: data.user });
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: senha,
+      options: { data: { nome } },
+    });
+
+    console.log("Resposta Supabase:", { data, error });
+
+    if (error) {
+      return res.status(400).json({
+        erro: error.message || "Não foi possível cadastrar o usuário no Supabase.",
+      });
+    }
+
+    return res.json({ mensagem: "Cadastro realizado com sucesso!", usuario: data.user });
+  } catch (error) {
+    console.error("Erro no cadastro do paciente:", error);
+    return res.status(500).json({
+      erro: "Erro de conexão com o Supabase. Verifique a URL e a chave de autenticação.",
+    });
+  }
 });
 
-app.post("/api/login", async (req, res) => {
+app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
   const { email, senha } = req.body;
   if (!email || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password: senha,
-  });
+  if (!supabase) {
+    return res.status(500).json({
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+    });
+  }
 
-  if (error) return res.status(400).json({ erro: "Email ou senha inválidos." });
-  res.json({
-    mensagem: "Login realizado com sucesso!",
-    usuario: data.user,
-    token: data.session.access_token,
-  });
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: senha,
+    });
+
+    if (error) return res.status(400).json({ erro: "Email ou senha inválidos." });
+    return res.json({
+      mensagem: "Login realizado com sucesso!",
+      usuario: data.user,
+      token: data.session.access_token,
+    });
+  } catch (error) {
+    console.error("Erro no login do paciente:", error);
+    return res.status(500).json({ erro: "Erro de conexão com o Supabase." });
+  }
 });
 
 app.post("/api/cadastro-psicologo", async (req, res) => {
