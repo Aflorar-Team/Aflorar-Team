@@ -27,6 +27,8 @@ if (envFaltando.length) {
 const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_KEY
   ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
   : null;
+console.log("Supabase URL:", process.env.SUPABASE_URL ? "✅ OK" : "❌ AUSENTE");
+console.log("Supabase KEY:", process.env.SUPABASE_KEY ? "✅ OK" : "❌ AUSENTE");
 
 app.use(express.static(path.join(__dirname, "../FrontEnd")));
 app.use("/Css", express.static(path.join(__dirname, "../Css")));
