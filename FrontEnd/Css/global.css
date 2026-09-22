@@ -70,9 +70,15 @@
   border: 2px solid white;
 }
 
-.profile {
-  font-size: 20px;
-  cursor: pointer;
+.foto-pacientes,
+.foto-paciente,
+.foto-psicologo {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fdf6f0;
+  flex-shrink: 0;
 }
 
 /* FOOTER */

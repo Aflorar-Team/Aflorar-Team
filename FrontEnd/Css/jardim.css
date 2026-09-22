@@ -76,16 +76,6 @@
     color:#fff;
   }
 
-  .avatar{
-    width:36px; height:36px; border-radius:50%;
-    background:rgba(255,255,255,0.25);
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer;
-    color:#fff;
-    flex-shrink:0;
-  }
-  .avatar svg{ width:20px; height:20px; }
-
   /* ============ SCENE ============ */
   .scene{
     position:relative;
