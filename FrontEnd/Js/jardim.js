@@ -4,7 +4,15 @@
   const TOTAL_SLOTS = 6; // 3x2 grid, last slot can be the "+" button
 
   // ---------- estado ----------
+  // usuárioId é obtido do localStorage; se não existir, cria um valor temporário "demo-user"
   let usuarioId = localStorage.getItem("aflorar_usuario_id");
+
+  // Se o usuárioId não estiver presente, cria um valor temporário "demo-user" e armazena no localStorage, Temporário até Banco de dados de usuários estar implementado.
+  if (!usuarioId) {
+    usuarioId = "demo-user";
+    localStorage.setItem("aflorar_usuario_id", usuarioId);
+    console.log("[jardim.js] usuarioId ausente; usando valor temporário: demo-user");
+  }
   let canteiros = []; // [{id, usuario_id, nome, nivel, posicao}]
   let editingId = null; // null = criando novo
 
