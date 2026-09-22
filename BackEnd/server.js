@@ -34,8 +34,8 @@ const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 
 const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
 
 app.use(express.static(path.join(__dirname, "../FrontEnd")));
-app.use("/Css", express.static(path.join(__dirname, "../Css")));
-app.use("/Js", express.static(path.join(__dirname, "../Js")));
+app.use("/Css", express.static(path.join(__dirname, "../FrontEnd/Css")));
+app.use("/Js", express.static(path.join(__dirname, "../FrontEnd/Js")));
 const origensPermitidas = [
   "https://aflorar-team.vercel.app",
   /https:\/\/aflorar-team-.*\.vercel\.app/  // aceita qualquer branch do vercel
@@ -252,6 +252,107 @@ app.post("/api/login-psicologo", async (req, res) => {
     usuario: data.user,
     token: data.session.access_token,
   });
+});
+
+app.get("/api/jardins", async (req, res) => {
+  const { usuario_id } = req.query;
+
+  if (!usuario_id) {
+    return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  }
+
+  if (!supabase) {
+    return res.status(500).json({
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+    });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("jardins")
+      .select("*")
+      .eq("usuario_id", usuario_id)
+      .order("posicao");
+
+    if (error) throw error;
+
+    return res.json({ canteiros: data || [] });
+  } catch (error) {
+    console.error("Erro ao listar jardins:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar o jardim." });
+  }
+});
+
+app.post("/api/jardins", async (req, res) => {
+  const { usuario_id, nome, posicao, nivel = 1 } = req.body;
+
+  if (!usuario_id || !nome || posicao === undefined) {
+    return res.status(400).json({ erro: "usuario_id, nome e posicao são obrigatórios." });
+  }
+
+  if (!supabase) {
+    return res.status(500).json({
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+    });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("jardins")
+      .insert([
+        {
+          usuario_id,
+          nome,
+          nivel: Number(nivel) || 1,
+          posicao: Number(posicao),
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.status(201).json({ canteiro: data });
+  } catch (error) {
+    console.error("Erro ao criar canteiro:", error);
+    return res.status(500).json({ erro: "Não foi possível criar o canteiro." });
+  }
+});
+
+app.put("/api/jardins/:id", async (req, res) => {
+  const { id } = req.params;
+  const { usuario_id, nome, nivel } = req.body;
+
+  if (!usuario_id) {
+    return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  }
+
+  if (!supabase) {
+    return res.status(500).json({
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+    });
+  }
+
+  try {
+    const updates = {};
+    if (nome !== undefined) updates.nome = nome;
+    if (nivel !== undefined) updates.nivel = Number(nivel) || 1;
+
+    const { data, error } = await supabase
+      .from("jardins")
+      .update(updates)
+      .eq("id", id)
+      .eq("usuario_id", usuario_id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return res.json({ canteiro: data });
+  } catch (error) {
+    console.error("Erro ao atualizar canteiro:", error);
+    return res.status(500).json({ erro: "Não foi possível atualizar o canteiro." });
+  }
 });
 
 app.listen(process.env.PORT || 3000, () => {
