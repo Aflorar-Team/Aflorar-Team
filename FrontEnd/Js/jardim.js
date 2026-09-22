@@ -329,18 +329,32 @@
       sideCard.classList.add("show");
     });
   });
-  closeCard.addEventListener("click", () => sideCard.classList.remove("show"));
 
-  document.getElementById("btn-perfil").addEventListener("click", () => {
-    sideCardTitle.textContent = "Perfil";
-    sideCardBody.textContent = "Suas informações de conta aparecerão aqui.";
-    sideCard.classList.add("show");
-  });
+  if (closeCard) {
+    closeCard.addEventListener("click", () => sideCard.classList.remove("show"));
+  } else {
+    console.warn("[jardim.js] Elemento #close-card não encontrado no DOM.");
+  }
+
+  const btnPerfil = document.getElementById("btn-perfil");
+  if (btnPerfil) {
+    btnPerfil.addEventListener("click", () => {
+      sideCardTitle.textContent = "Perfil";
+      sideCardBody.textContent = "Suas informações de conta aparecerão aqui.";
+      sideCard.classList.add("show");
+    });
+  } else {
+    console.warn("[jardim.js] Elemento #btn-perfil não encontrado no DOM. Verifique o HTML do navbar.");
+  }
 
   // ---------- fence ----------
   (function buildFence() {
     const fence = document.getElementById("fence");
     const count = 40;
+    if (!fence) {
+      console.warn("[jardim.js] Elemento #fence não encontrado no DOM.");
+      return;
+    }
     for (let i = 0; i < count; i++) {
       const picket = document.createElement("div");
       picket.className = "picket";
@@ -349,8 +363,20 @@
   })();
 
   // ---------- nav arrows (placeholder pagination) ----------
-  document.getElementById("btn-prev").addEventListener("click", () => showToast("Você já está na primeira página do jardim."));
-  document.getElementById("btn-next").addEventListener("click", () => showToast("Mais espaços de jardim em breve!"));
+  const btnPrev = document.getElementById("btn-prev");
+  const btnNext = document.getElementById("btn-next");
+
+  if (btnPrev) {
+    btnPrev.addEventListener("click", () => showToast("Você já está na primeira página do jardim."));
+  } else {
+    console.warn("[jardim.js] Elemento #btn-prev não encontrado no DOM.");
+  }
+
+  if (btnNext) {
+    btnNext.addEventListener("click", () => showToast("Mais espaços de jardim em breve!"));
+  } else {
+    console.warn("[jardim.js] Elemento #btn-next não encontrado no DOM.");
+  }
 
   document.querySelectorAll(".nav-item").forEach(item => {
     item.addEventListener("click", () => {
