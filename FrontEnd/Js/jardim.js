@@ -125,15 +125,21 @@
 
   // ---------- API ----------
   function getApiCandidates() {
-    const origins = [];
+    const origins = [
+      "https://aflorar-backend.onrender.com",
+      "http://localhost:3000",
+      "http://localhost:3001"
+    ];
 
-    if (window.location.protocol === "file:") {
-      origins.push("http://localhost:3000", "http://localhost:3001");
-    } else if (window.location.origin) {
-      origins.push(window.location.origin);
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return ["http://localhost:3000", "http://localhost:3001", "https://aflorar-backend.onrender.com"];
     }
 
-    return origins.length ? origins : ["http://localhost:3000", "http://localhost:3001"];
+    if (window.location.origin && !window.location.origin.includes("vercel.app")) {
+      return [window.location.origin, ...origins.filter(origin => origin !== window.location.origin)];
+    }
+
+    return origins;
   }
 
   async function apiRequest(path, options = {}) {
