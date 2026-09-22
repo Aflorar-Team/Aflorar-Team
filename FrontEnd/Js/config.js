@@ -26,7 +26,7 @@
       localStorage.removeItem("token");
       localStorage.removeItem("usuario");
       localStorage.removeItem("tipo");
-      window.location.href = "./escolha_tipo_conta.html";
+      window.location.href = "../escolha-tipo-conta.html";
     }
 
     // Salvar dados
