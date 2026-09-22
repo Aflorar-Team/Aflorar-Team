@@ -124,6 +124,42 @@
   }
 
   // ---------- API ----------
+  function getApiCandidates() {
+    const origins = [];
+
+    if (window.location.protocol === "file:") {
+      origins.push("http://localhost:3000", "http://localhost:3001");
+    } else if (window.location.origin) {
+      origins.push(window.location.origin);
+    }
+
+    return origins.length ? origins : ["http://localhost:3000", "http://localhost:3001"];
+  }
+
+  async function apiRequest(path, options = {}) {
+    const candidates = getApiCandidates();
+    let lastError = null;
+
+    for (const origin of candidates) {
+      const url = `${origin}${path}`;
+      console.log("[jardim.js] Tentando chamada na API:", url);
+
+      try {
+        const response = await fetch(url, options);
+
+        if (response.status !== 404) {
+          return response;
+        }
+
+        lastError = new Error(`404 em ${url}`);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error("API indisponível");
+  }
+
   async function carregarCanteiros() {
 
     if (!usuarioId) {
@@ -143,7 +179,7 @@
     }, 8000);
 
     try {
-      const response = await fetch(`/api/jardins?usuario_id=${encodeURIComponent(usuarioId)}`, {
+      const response = await apiRequest(`/api/jardins?usuario_id=${encodeURIComponent(usuarioId)}`, {
         signal: controller.signal,
       });
       const payload = await response.json().catch(() => ({}));
@@ -183,7 +219,7 @@
     posicao
   ) {
 
-    const response = await fetch("/api/jardins", {
+    const response = await apiRequest("/api/jardins", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -213,7 +249,7 @@
     updates
   ) {
 
-    const response = await fetch(`/api/jardins/${id}`, {
+    const response = await apiRequest(`/api/jardins/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json"
