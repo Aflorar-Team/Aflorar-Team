@@ -119,17 +119,25 @@
   async function carregarCanteiros() {
 
     if (!usuarioId) {
-
+      console.log("[jardim.js] Sem usuarioId. Renderizando jardim vazio.");
       canteiros = [];
       renderGrid();
       return;
-
     }
 
+    console.log("[jardim.js] Iniciando carregamento do jardim para usuarioId:", usuarioId);
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.warn("[jardim.js] Timeout ao carregar jardim. Abortando requisição.");
+      controller.abort();
+    }, 8000);
+
     try {
-      const response = await fetch(`/api/jardins?usuario_id=${encodeURIComponent(usuarioId)}`);
+      const response = await fetch(`/api/jardins?usuario_id=${encodeURIComponent(usuarioId)}`, {
+        signal: controller.signal,
+      });
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -138,19 +146,27 @@
 
       canteiros = Array.isArray(payload.canteiros) ? payload.canteiros : [];
       renderGrid();
+      console.log("[jardim.js] Jardim carregado com sucesso:", canteiros.length, "canteiros");
 
     } catch (error) {
-
-      console.error(error);
-      showToast(
-        error.message || "Erro ao carregar jardim",
-        "error"
-      );
+      if (error.name === "AbortError") {
+        console.warn("[jardim.js] Requisição abortada por timeout.");
+        canteiros = [];
+        renderGrid();
+        showToast("Servidor demorou para responder. Tente novamente em alguns segundos.", "error");
+      } else {
+        console.error("[jardim.js] Erro ao carregar jardim:", error);
+        canteiros = [];
+        renderGrid();
+        showToast(
+          error.message || "Erro ao carregar jardim",
+          "error"
+        );
+      }
 
     } finally {
-
+      clearTimeout(timeoutId);
       setLoading(false);
-
     }
 
   }
