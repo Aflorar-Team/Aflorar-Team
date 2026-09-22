@@ -23,6 +23,8 @@ O **Aflorar** é uma plataforma web voltada para o bem-estar emocional e saúde 
 - Cadastro e login
 - Chat com a Flora (IA baseada no Gemini)
 - Acompanhamento de humor/emocional
+- Jardim
+- Diário
 
 ### Psicólogo
 - Cadastro e login com CRP e CPF
