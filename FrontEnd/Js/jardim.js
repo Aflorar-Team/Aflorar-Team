@@ -124,6 +124,8 @@
   }
 
   // ---------- API ----------
+  const GARDEN_LOCAL_KEY = "aflorar_jardins_demo";
+
   function getApiCandidates() {
     const renderOrigin = "https://aflorar-backend.onrender.com";
     const localOrigins = ["http://localhost:3000", "http://localhost:3001"];
@@ -136,6 +138,28 @@
     }
 
     return [renderOrigin, ...localOrigins];
+  }
+
+  function loadLocalGarden() {
+    try {
+      const raw = localStorage.getItem(GARDEN_LOCAL_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return Array.isArray(parsed[usuarioId]) ? parsed[usuarioId] : [];
+    } catch (error) {
+      console.warn("Não foi possível ler o jardim local:", error);
+      return [];
+    }
+  }
+
+  function saveLocalGarden(items) {
+    try {
+      const raw = localStorage.getItem(GARDEN_LOCAL_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      parsed[usuarioId] = items;
+      localStorage.setItem(GARDEN_LOCAL_KEY, JSON.stringify(parsed));
+    } catch (error) {
+      console.warn("Não foi possível salvar o jardim local:", error);
+    }
   }
 
   async function apiRequest(path, options = {}) {
@@ -191,11 +215,18 @@
       }
 
       canteiros = Array.isArray(payload.canteiros) ? payload.canteiros : [];
+      saveLocalGarden(canteiros);
       renderGrid();
       console.log("[jardim.js] Jardim carregado com sucesso:", canteiros.length, "canteiros");
 
     } catch (error) {
-      if (error.name === "AbortError") {
+      const gardenFallback = loadLocalGarden();
+      if (gardenFallback.length) {
+        canteiros = gardenFallback;
+        renderGrid();
+        console.warn("[jardim.js] Usando fallback local do jardim por falha na API:", error.message || error);
+        showToast("Mostrando seu jardim salvo localmente.", "success");
+      } else if (error.name === "AbortError") {
         console.warn("[jardim.js] Requisição abortada por timeout.");
         canteiros = [];
         renderGrid();
@@ -343,6 +374,7 @@
         if (idx > -1) {
           canteiros[idx] = { ...canteiros[idx], nome, nivel: selectedLevel, ...(atualizado.canteiro || {}) };
         }
+        saveLocalGarden(canteiros);
         showToast("Canteiro atualizado!", "success");
       } else {
         const posicao = Number(modalBackdrop.dataset.posicao);
@@ -355,6 +387,7 @@
           nivel: typeof novo.nivel === "number" ? novo.nivel : 1,
           posicao: typeof novo.posicao === "number" ? novo.posicao : posicao
         });
+        saveLocalGarden(canteiros);
         showToast("Canteiro criado!", "success");
       }
       renderGrid();

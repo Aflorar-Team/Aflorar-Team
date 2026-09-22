@@ -6,17 +6,24 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createClient } from "@supabase/supabase-js";
 
-dotenv.config();
-
-const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, ".env") });
+
+const app = express();
+
+const readEnv = (chave) => String(process.env[chave] || "").trim();
+const SUPABASE_URL = readEnv("SUPABASE_URL");
+const SUPABASE_KEY = readEnv("SUPABASE_KEY");
+const GEMINI_API_KEY = readEnv("GEMINI_API_KEY");
+const PORT = readEnv("PORT") || "3000";
 
 const envFaltando = [
   "SUPABASE_URL",
   "SUPABASE_KEY",
   "GEMINI_API_KEY",
-].filter((chave) => !process.env[chave]);
+].filter((chave) => !readEnv(chave));
 
 if (envFaltando.length) {
   console.warn(
@@ -24,11 +31,22 @@ if (envFaltando.length) {
   );
 }
 
-const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_KEY
-  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY)
+const supabase = SUPABASE_URL && SUPABASE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
   : null;
-console.log("Supabase URL:", process.env.SUPABASE_URL ? "✅ OK" : "❌ AUSENTE");
-console.log("Supabase KEY:", process.env.SUPABASE_KEY ? "✅ OK" : "❌ AUSENTE");
+console.log("Supabase URL:", SUPABASE_URL ? "✅ OK" : "❌ AUSENTE");
+console.log("Supabase KEY:", SUPABASE_KEY ? "✅ OK" : "❌ AUSENTE");
+
+const jardinsFallback = new Map();
+
+const getJardinsFallback = (usuarioId) => {
+  const lista = jardinsFallback.get(String(usuarioId)) || [];
+  return lista.map((canteiro) => ({ ...canteiro, id: String(canteiro.id) }));
+};
+
+const setJardinsFallback = (usuarioId, canteiros) => {
+  jardinsFallback.set(String(usuarioId), canteiros.map((canteiro) => ({ ...canteiro, id: String(canteiro.id) })));
+};
 
 const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
 const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
@@ -89,7 +107,7 @@ app.post("/api/flora", async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -128,7 +146,7 @@ app.post("/api/cadastro-paciente", async (req, res) => {
     return res.status(400).json({ erro: "Telefone inválido." });
   }
 
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_KEY) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
     return res.status(500).json({
       erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
     });
@@ -262,9 +280,9 @@ app.get("/api/jardins", async (req, res) => {
   }
 
   if (!supabase) {
-    return res.status(500).json({
-      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
-    });
+    const canteiros = getJardinsFallback(usuario_id);
+    console.warn("Supabase ausente. Usando fallback em memória para jardins do usuário:", usuario_id);
+    return res.json({ canteiros });
   }
 
   try {
@@ -276,10 +294,13 @@ app.get("/api/jardins", async (req, res) => {
 
     if (error) throw error;
 
+    setJardinsFallback(usuario_id, data || []);
     return res.json({ canteiros: data || [] });
   } catch (error) {
     console.error("Erro ao listar jardins:", error);
-    return res.status(500).json({ erro: "Não foi possível carregar o jardim." });
+    const canteiros = getJardinsFallback(usuario_id);
+    console.warn("Usando fallback em memória para listar jardins do usuário:", usuario_id);
+    return res.json({ canteiros });
   }
 });
 
@@ -291,9 +312,16 @@ app.post("/api/jardins", async (req, res) => {
   }
 
   if (!supabase) {
-    return res.status(500).json({
-      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
-    });
+    const canteiros = getJardinsFallback(usuario_id);
+    const novoCanteiro = {
+      id: `demo-${Date.now()}`,
+      usuario_id,
+      nome,
+      nivel: Number(nivel) || 1,
+      posicao: Number(posicao),
+    };
+    setJardinsFallback(usuario_id, [...canteiros, novoCanteiro]);
+    return res.status(201).json({ canteiro: novoCanteiro });
   }
 
   try {
@@ -312,10 +340,21 @@ app.post("/api/jardins", async (req, res) => {
 
     if (error) throw error;
 
+    const canteiros = getJardinsFallback(usuario_id);
+    setJardinsFallback(usuario_id, [...canteiros, data]);
     return res.status(201).json({ canteiro: data });
   } catch (error) {
     console.error("Erro ao criar canteiro:", error);
-    return res.status(500).json({ erro: "Não foi possível criar o canteiro." });
+    const canteiros = getJardinsFallback(usuario_id);
+    const novoCanteiro = {
+      id: `demo-${Date.now()}`,
+      usuario_id,
+      nome,
+      nivel: Number(nivel) || 1,
+      posicao: Number(posicao),
+    };
+    setJardinsFallback(usuario_id, [...canteiros, novoCanteiro]);
+    return res.status(201).json({ canteiro: novoCanteiro });
   }
 });
 
@@ -328,9 +367,18 @@ app.put("/api/jardins/:id", async (req, res) => {
   }
 
   if (!supabase) {
-    return res.status(500).json({
-      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
-    });
+    const canteiros = getJardinsFallback(usuario_id);
+    const idx = canteiros.findIndex((canteiro) => String(canteiro.id) === String(id));
+    if (idx >= 0) {
+      canteiros[idx] = {
+        ...canteiros[idx],
+        ...(nome !== undefined ? { nome } : {}),
+        ...(nivel !== undefined ? { nivel: Number(nivel) || 1 } : {}),
+      };
+      setJardinsFallback(usuario_id, canteiros);
+      return res.json({ canteiro: canteiros[idx] });
+    }
+    return res.status(404).json({ erro: "Canteiro não encontrado no fallback local." });
   }
 
   try {
@@ -348,10 +396,27 @@ app.put("/api/jardins/:id", async (req, res) => {
 
     if (error) throw error;
 
+    const canteiros = getJardinsFallback(usuario_id);
+    const idx = canteiros.findIndex((canteiro) => String(canteiro.id) === String(id));
+    if (idx >= 0) {
+      canteiros[idx] = { ...canteiros[idx], ...data };
+      setJardinsFallback(usuario_id, canteiros);
+    }
     return res.json({ canteiro: data });
   } catch (error) {
     console.error("Erro ao atualizar canteiro:", error);
-    return res.status(500).json({ erro: "Não foi possível atualizar o canteiro." });
+    const canteiros = getJardinsFallback(usuario_id);
+    const idx = canteiros.findIndex((canteiro) => String(canteiro.id) === String(id));
+    if (idx >= 0) {
+      canteiros[idx] = {
+        ...canteiros[idx],
+        ...(nome !== undefined ? { nome } : {}),
+        ...(nivel !== undefined ? { nivel: Number(nivel) || 1 } : {}),
+      };
+      setJardinsFallback(usuario_id, canteiros);
+      return res.json({ canteiro: canteiros[idx] });
+    }
+    return res.status(404).json({ erro: "Canteiro não encontrado." });
   }
 });
 
