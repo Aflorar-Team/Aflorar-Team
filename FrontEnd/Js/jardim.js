@@ -125,21 +125,17 @@
 
   // ---------- API ----------
   function getApiCandidates() {
-    const origins = [
-      "https://aflorar-backend.onrender.com",
-      "http://localhost:3000",
-      "http://localhost:3001"
-    ];
+    const renderOrigin = "https://aflorar-backend.onrender.com";
+    const localOrigins = ["http://localhost:3000", "http://localhost:3001"];
+    const currentOrigin = window.location.origin;
+    const isLocalBackend = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"]
+      .includes(currentOrigin);
 
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-      return ["http://localhost:3000", "http://localhost:3001", "https://aflorar-backend.onrender.com"];
+    if (isLocalBackend) {
+      return [currentOrigin, ...localOrigins.filter(origin => origin !== currentOrigin), renderOrigin];
     }
 
-    if (window.location.origin && !window.location.origin.includes("vercel.app")) {
-      return [window.location.origin, ...origins.filter(origin => origin !== window.location.origin)];
-    }
-
-    return origins;
+    return [renderOrigin, ...localOrigins];
   }
 
   async function apiRequest(path, options = {}) {
@@ -356,8 +352,8 @@
           id: novo.id,
           usuario_id: usuarioId,
           nome,
-          nivel: 1,
-          posicao
+          nivel: typeof novo.nivel === "number" ? novo.nivel : 1,
+          posicao: typeof novo.posicao === "number" ? novo.posicao : posicao
         });
         showToast("Canteiro criado!", "success");
       }
