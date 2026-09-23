@@ -171,6 +171,7 @@ Abra `http://localhost:3000` no navegador.
 
 | Nome | Função |
 |---|---|
+| Altemar Galvão | Mentor |
 | João Vitor | Desenvolvedor Full-Stack |
 | Gleyciane Julia | Desenvolvedora |
 | Luna Ariela | Designer de UI/UX Geral |
