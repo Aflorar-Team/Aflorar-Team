@@ -15,6 +15,8 @@
   }
   let canteiros = []; // [{id, usuario_id, nome, nivel, posicao}]
   let editingId = null; // null = criando novo
+  let plantaSelecionada = null;
+  let voltarParaEvolucao = false;
 
   // ---------- elementos ----------
   const grid = document.getElementById("garden-grid");
@@ -33,6 +35,16 @@
   const sideCardTitle = document.getElementById("side-card-title");
   const sideCardBody = document.getElementById("side-card-body");
   const closeCard = document.getElementById("close-card");
+  const evolutionBackdrop = document.getElementById("evolution-backdrop");
+  const evolutionDetails = document.getElementById("evolution-details");
+  const evolutionCompose = document.getElementById("evolution-compose");
+  const evolutionList = document.getElementById("evolution-list");
+  const evolutionTitle = document.getElementById("evolution-title");
+  const evolutionText = document.getElementById("evolution-text");
+  const evolutionShare = document.getElementById("evolution-share");
+  const evolutionCount = document.getElementById("evolution-count");
+  const evolutionFormError = document.getElementById("evolution-form-error");
+  const evolutionStorageKey = `aflorar_evolucoes_${usuarioId}`;
 
   let selectedLevel = 1;
 
@@ -92,7 +104,16 @@
           <div class="planter-name">${escapeHTML(canteiro.nome)}</div>
           <div class="planter-level">${levelStarsSVG(canteiro.nivel || 1)}</div>
         `;
-        el.addEventListener("click", () => openEditModal(canteiro));
+        el.setAttribute("role", "button");
+        el.setAttribute("tabindex", "0");
+        el.setAttribute("aria-label", `Ver evoluções de ${canteiro.nome}`);
+        el.addEventListener("click", () => abrirEvolucoes(canteiro));
+        el.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            abrirEvolucoes(canteiro);
+          }
+        });
         slot.appendChild(el);
       } else {
         const nextPos = getNextAvailablePosition();
@@ -122,6 +143,145 @@
     div.textContent = str;
     return div.innerHTML;
   }
+
+  function lerEvolucoes() {
+    try {
+      const evolucoes = JSON.parse(localStorage.getItem(evolutionStorageKey) || "{}");
+      return evolucoes && typeof evolucoes === "object" && !Array.isArray(evolucoes) ? evolucoes : {};
+    } catch (error) {
+      console.warn("Não foi possível ler as evoluções:", error);
+      return {};
+    }
+  }
+
+  function desenharEvolucoes() {
+    const evolucoes = lerEvolucoes()[String(plantaSelecionada.id)] || [];
+    evolutionList.replaceChildren();
+
+    if (!evolucoes.length) {
+      const emptyState = document.createElement("p");
+      emptyState.className = "evolution-empty";
+      emptyState.textContent = "Sua história começa com um pequeno registro. Como esta planta está crescendo?";
+      evolutionList.appendChild(emptyState);
+      return;
+    }
+
+    [...evolucoes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).forEach((evolucao) => {
+      const item = document.createElement("article");
+      item.className = "evolution-entry";
+
+      const header = document.createElement("div");
+      header.className = "evolution-entry-header";
+      const label = document.createElement("h3");
+      label.textContent = "Evolução";
+      const date = document.createElement("time");
+      date.dateTime = evolucao.createdAt;
+      date.textContent = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(evolucao.createdAt));
+      header.append(label, date);
+
+      const body = document.createElement("p");
+      body.textContent = evolucao.text;
+      item.append(header, body);
+
+      if (evolucao.publica) {
+        const badge = document.createElement("span");
+        badge.className = "evolution-public-badge";
+        badge.textContent = "Compartilhada";
+        item.appendChild(badge);
+      }
+
+      evolutionList.appendChild(item);
+    });
+  }
+
+  function abrirEvolucoes(canteiro) {
+    plantaSelecionada = canteiro;
+    document.getElementById("plant-portrait-name").textContent = canteiro.nome;
+    document.getElementById("plant-portrait-level").textContent = `Nível ${canteiro.nivel || 1}`;
+    document.getElementById("compose-plant-name").textContent = canteiro.nome;
+    evolutionTitle.textContent = canteiro.nome;
+    desenharEvolucoes();
+    evolutionCompose.hidden = true;
+    evolutionDetails.hidden = false;
+    evolutionBackdrop.classList.add("show");
+    evolutionBackdrop.setAttribute("aria-hidden", "false");
+    document.getElementById("evolution-close").focus();
+  }
+
+  function abrirFormularioEvolucao(publica = false) {
+    evolutionDetails.hidden = true;
+    evolutionCompose.hidden = false;
+    evolutionText.value = "";
+    evolutionShare.checked = publica;
+    evolutionCount.textContent = "0/600";
+    evolutionFormError.textContent = "";
+    evolutionCompose.classList.toggle("is-public", publica);
+    document.getElementById("evolution-public").setAttribute("aria-pressed", String(publica));
+    evolutionText.focus();
+  }
+
+  function fecharEvolucoes() {
+    evolutionBackdrop.classList.remove("show");
+    evolutionBackdrop.setAttribute("aria-hidden", "true");
+    evolutionCompose.hidden = true;
+    evolutionDetails.hidden = false;
+    plantaSelecionada = null;
+    grid.querySelector(".planter")?.focus();
+  }
+
+  document.getElementById("evolution-register").addEventListener("click", () => abrirFormularioEvolucao());
+  document.getElementById("evolution-public").addEventListener("click", () => abrirFormularioEvolucao(true));
+  document.getElementById("evolution-back").addEventListener("click", () => {
+    evolutionCompose.hidden = true;
+    evolutionDetails.hidden = false;
+  });
+  document.getElementById("evolution-close").addEventListener("click", fecharEvolucoes);
+  document.getElementById("evolution-edit").addEventListener("click", () => {
+    if (!plantaSelecionada) return;
+    const canteiro = plantaSelecionada;
+    fecharEvolucoes();
+    voltarParaEvolucao = true;
+    openEditModal(canteiro);
+  });
+  evolutionBackdrop.addEventListener("click", (event) => {
+    if (event.target === evolutionBackdrop) fecharEvolucoes();
+  });
+  evolutionText.addEventListener("input", () => {
+    evolutionCount.textContent = `${evolutionText.value.length}/600`;
+  });
+  evolutionShare.addEventListener("change", () => {
+    evolutionCompose.classList.toggle("is-public", evolutionShare.checked);
+    document.getElementById("evolution-public").setAttribute("aria-pressed", String(evolutionShare.checked));
+  });
+  evolutionCompose.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = evolutionText.value.trim();
+    if (!text || !plantaSelecionada) {
+      evolutionFormError.textContent = "Escreva uma evolução antes de salvar.";
+      return;
+    }
+
+    const todasEvolucoes = lerEvolucoes();
+    const plantaId = String(plantaSelecionada.id);
+    todasEvolucoes[plantaId] = [
+      ...(todasEvolucoes[plantaId] || []),
+      { id: `${Date.now()}`, text, createdAt: new Date().toISOString(), publica: evolutionShare.checked },
+    ];
+
+    try {
+      localStorage.setItem(evolutionStorageKey, JSON.stringify(todasEvolucoes));
+      desenharEvolucoes();
+      evolutionCompose.hidden = true;
+      evolutionDetails.hidden = false;
+      showToast("Evolução registrada!", "success");
+    } catch (error) {
+      console.error("Não foi possível salvar a evolução:", error);
+      evolutionFormError.textContent = "Não foi possível salvar. Verifique o espaço disponível no navegador.";
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && evolutionBackdrop.classList.contains("show")) fecharEvolucoes();
+  });
 
   // ---------- API ----------
   const GARDEN_LOCAL_KEY = "aflorar_jardins_demo";
@@ -350,9 +510,15 @@
     selectLevel(Number(star.dataset.level));
   });
 
-  btnCancel.addEventListener("click", closeModal);
+  btnCancel.addEventListener("click", () => {
+    voltarParaEvolucao = false;
+    closeModal();
+  });
   modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop) closeModal();
+    if (e.target === modalBackdrop) {
+      voltarParaEvolucao = false;
+      closeModal();
+    }
   });
 
   btnSave.addEventListener("click", async () => {
@@ -368,6 +534,7 @@
     btnSave.textContent = "Salvando...";
 
     try {
+      const plantaEditada = editingId ? canteiros.find(c => c.id === editingId) : null;
       if (editingId) {
         const atualizado = await atualizarCanteiro(editingId, { nome, nivel: selectedLevel });
         const idx = canteiros.findIndex(c => c.id === editingId);
@@ -392,6 +559,11 @@
       }
       renderGrid();
       closeModal();
+      if (voltarParaEvolucao && plantaEditada) {
+        voltarParaEvolucao = false;
+        const atualizada = canteiros.find(c => String(c.id) === String(plantaEditada.id));
+        if (atualizada) abrirEvolucoes(atualizada);
+      }
     } catch (err) {
       console.error(err);
       modalError.textContent = "Não foi possível salvar. Tente novamente.";

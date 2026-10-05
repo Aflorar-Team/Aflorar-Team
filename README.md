@@ -71,37 +71,35 @@ O **Aflorar** é uma plataforma web voltada para o bem-estar emocional e saúde 
 ```
 Aflorar/
 ├── FrontEnd/
-│   ├── Css/
-│   │   ├── global.css
-│   │   ├── login.css
-│   │   └── ...
-│   ├── Js/
-│   │   ├── chat.js
-│   │   ├── login-paciente.js
-│   │   ├── cadastro-paciente.js
-│   │   ├── login-psicologo.js
-│   │   ├── cadastro-psicologo.js
-│   │   └── dashboard-psicologo.js
-│   ├── chat.html
-│   ├── inicio.html
-│   ├── login-paciente.html
-│   ├── cadastro-paciente.html
-│   ├── login-psicologo.html
-│   ├── cadastro-psicologo.html
-│   ├── dashboard-psicologo.html
-│   ├── agenda-psicologo.html
-│   ├── graficos-paciente.html
-│   └── anotacoes-psicologo.html
-│
+│   ├── index.html
+│   ├── escolha-tipo-conta.html
+│   ├── shared/
+│   │   ├── css/             # estilos compartilhados e telas públicas
+│   │   └── js/              # scripts compartilhados e tela inicial
+│   ├── Paciente/
+│   │   ├── *.html
+│   │   ├── css/             # estilos das telas do paciente
+│   │   └── js/              # scripts das telas do paciente
+│   └── Psicologo/
+│       ├── *.html
+│       ├── css/             # estilos das telas do psicólogo
+│       └── js/              # scripts das telas do psicólogo
 ├── BackEnd/
-│   ├── server.js
-│   ├── .env          ← NÃO versionar
-│   ├── package.json
-│   └── node_modules/ ← NÃO versionar
-│
+│   ├── server.js             # entrada compatível com npm start/Render
+│   ├── src/
+│   │   ├── app.js            # Express e rotas da API
+│   │   ├── server.js         # inicialização HTTP
+│   │   └── config/
+│   │       ├── env.js        # variáveis de ambiente
+│   │       └── supabase.js   # cliente Supabase
+│   ├── supabase-schema.sql
+│   ├── .env                  # não versionar
+│   └── package.json
 ├── .gitignore
 └── README.md
 ```
+
+No frontend, cada perfil mantém suas páginas, estilos e scripts próximos. O backend mantém a inicialização e as configurações separadas; as rotas ainda estão reunidas em `src/app.js` e podem ser extraídas por domínio conforme evoluírem.
 
 ---
 
