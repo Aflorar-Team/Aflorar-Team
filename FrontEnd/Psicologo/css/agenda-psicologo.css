@@ -20,12 +20,20 @@
  
     main { flex: 1; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
  
+    .agenda-layout {
+      width: 100%;
+      max-width: 1120px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 24px;
+      align-items: start;
+    }
+
     .calendario {
       background: white;
-      border-radius: 20px;
-      padding: 40px;
+      border-radius: 12px;
+      padding: 32px;
       width: 100%;
-      max-width: 1000px;
       box-shadow: 0 2px 16px rgba(0,0,0,0.06);
     }
  
@@ -61,7 +69,7 @@
       margin-bottom: 8px;
     }
  
-    .grid-semana div {
+    .grid-semana span {
       font-weight: bold;
       font-size: 14px;
       color: #333;
@@ -83,6 +91,8 @@
     .dia {
       width: 44px;
       height: 44px;
+      padding: 0;
+      border: 0;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -92,6 +102,7 @@
       cursor: pointer;
       transition: background 0.2s;
       position: relative;
+      background: transparent;
     }
  
     .dia:hover { background: #f0e0d6; }
@@ -99,20 +110,121 @@
     .dia.hoje { background: #4A7C59; color: white; font-weight: bold; }
     .dia.selecionado { background: #F4A261; color: white; font-weight: bold; }
  
-    .dia.tem-consulta::after {
-      content: '';
-      display: block;
-      width: 5px;
-      height: 5px;
-      background: #E8717A;
-      border-radius: 50%;
+    .marcadores-dia {
       position: absolute;
-      bottom: 3px;
+      bottom: 4px;
       left: 50%;
       transform: translateX(-50%);
+      display: flex;
+      gap: 3px;
+    }
+
+    .marcadores-dia i,
+    .legenda-agenda i {
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
     }
  
-    .dia.hoje.tem-consulta::after,
-    .dia.selecionado.tem-consulta::after { background: white; }
+    .marcador-compromisso { background: #d65d61; }
+    .marcador-autoaviso { background: #4a7c59; }
+    .dia.hoje .marcador-compromisso,
+    .dia.hoje .marcador-autoaviso,
+    .dia.selecionado .marcador-compromisso,
+    .dia.selecionado .marcador-autoaviso { background: white; }
+
+    .legenda-agenda {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 22px;
+      color: #6b625d;
+      font-size: 12px;
+    }
+    .legenda-agenda span { display: inline-flex; align-items: center; gap: 7px; }
+
+    .painel-dia {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      min-height: 300px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+    .sobrelinha { color: #9b6a4b; font-size: 11px; font-weight: 700; }
+    .painel-dia h1 { margin-top: 5px; color: #302a26; font-size: 24px; }
+    .data-selecionada { margin-top: 5px; color: #756a64; font-size: 14px; text-transform: capitalize; }
+
+    .acoes-agenda { display: grid; gap: 9px; margin: 22px 0; }
+    .botao {
+      min-height: 42px;
+      border: 0;
+      border-radius: 6px;
+      padding: 9px 14px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: filter 0.2s, transform 0.2s;
+    }
+    .botao:hover { filter: brightness(0.96); }
+    .botao:active { transform: translateY(1px); }
+    .botao span { margin-right: 5px; font-size: 18px; }
+    .botao-compromisso { background: #f4a261; color: #fff; }
+    .botao-autoaviso { background: #e7f0e9; color: #315d3e; }
+
+    .lista-eventos { list-style: none; display: grid; gap: 10px; }
+    .evento { border-left: 3px solid #d65d61; padding: 11px 12px; background: #fbf8f5; border-radius: 0 6px 6px 0; }
+    .evento.autoaviso { border-left-color: #4a7c59; }
+    .evento-topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .evento h2 { color: #302a26; font-size: 14px; line-height: 1.4; overflow-wrap: anywhere; }
+    .evento-hora { flex: 0 0 auto; color: #6b625d; font-size: 12px; }
+    .evento p { margin-top: 5px; color: #756a64; font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .evento-rotulo { display: inline-block; margin-top: 7px; color: #9b514e; font-size: 11px; font-weight: 600; }
+    .evento.autoaviso .evento-rotulo { color: #315d3e; }
+    .botao-remover { flex: 0 0 auto; border: 0; background: transparent; color: #756a64; cursor: pointer; font-size: 18px; line-height: 1; padding: 1px 4px; }
+    .botao-remover:hover { color: #a13d42; }
+    .estado-vazio { padding: 16px 0; color: #887e78; font-size: 14px; }
+
+    .dialog-evento {
+      width: min(460px, calc(100% - 32px));
+      border: 0;
+      border-radius: 10px;
+      padding: 25px;
+      color: #302a26;
+      box-shadow: 0 18px 60px rgba(33, 25, 20, 0.22);
+    }
+    .dialog-evento::backdrop { background: rgba(35, 29, 25, 0.44); }
+    .dialog-cabecalho { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .dialog-cabecalho h2 { margin-top: 4px; font-size: 21px; }
+    .botao-fechar { width: 32px; height: 32px; border: 0; background: transparent; color: #756a64; cursor: pointer; font-size: 25px; }
+    .dialog-evento form > label:not(.opcao-notificacao),
+    .campos-linha label { display: block; margin: 12px 0 6px; color: #514842; font-size: 13px; font-weight: 600; }
+    .dialog-evento label span { color: #887e78; font-weight: 400; }
+    .dialog-evento input:not([type="checkbox"]),
+    .dialog-evento textarea { width: 100%; min-height: 40px; border: 1px solid #ddd3cc; border-radius: 5px; padding: 9px 10px; color: #302a26; font: inherit; font-size: 14px; }
+    .dialog-evento textarea { resize: vertical; }
+    .campos-linha { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .opcao-notificacao { display: flex; align-items: flex-start; gap: 9px; margin-top: 15px; color: #514842; font-size: 13px; line-height: 1.4; cursor: pointer; }
+    .opcao-notificacao input { margin-top: 2px; accent-color: #4a7c59; }
+    .acoes-dialogo { display: flex; justify-content: flex-end; gap: 9px; margin-top: 22px; }
+    .botao-cancelar { border: 0; background: transparent; padding: 9px 12px; color: #6b625d; font: inherit; cursor: pointer; }
+    .botao-salvar { min-width: 90px; background: #4a7c59; color: #fff; }
+
+    @media (max-width: 760px) {
+      main { padding: 22px 16px; }
+      .agenda-layout { grid-template-columns: 1fr; gap: 16px; }
+      .calendario { padding: 22px 14px; }
+      .painel-dia { padding: 22px; }
+      .dia { width: min(44px, 10vw); height: min(44px, 10vw); }
+      .grid-semana span { font-size: 11px; }
+    }
+
+    @media (max-width: 420px) {
+      .navbar { padding: 10px 16px; }
+      .menu { gap: 0; }
+      .menu a { padding: 8px 12px; }
+      .campos-linha { grid-template-columns: 1fr; gap: 0; }
+    }
  
     footer { text-align: center; padding: 15px; font-size: 12px; color: #aaa; }

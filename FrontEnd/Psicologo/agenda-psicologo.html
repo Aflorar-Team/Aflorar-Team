@@ -23,28 +23,91 @@
   </header>
 
   <main>
-    <div class="calendario">
-      <div class="cal-header">
-        <div class="nav-mes">
-          <button id="btnAnterior">&#8249;</button>
-          <span id="mesAno"></span>
-          <button id="btnProximo">&#8250;</button>
+    <div class="agenda-layout">
+      <section class="calendario" aria-label="Calendário da agenda">
+        <div class="cal-header">
+          <div class="nav-mes">
+            <button id="btnAnterior" type="button" aria-label="Mês anterior">&#8249;</button>
+            <span id="mesAno"></span>
+            <button id="btnProximo" type="button" aria-label="Próximo mês">&#8250;</button>
+          </div>
+        </div>
+
+        <div class="grid-semana" aria-hidden="true">
+          <span>DOM</span>
+          <span>SEG</span>
+          <span>TER</span>
+          <span>QUA</span>
+          <span>QUI</span>
+          <span>SEX</span>
+          <span>SAB</span>
+        </div>
+
+        <div class="grid-dias" id="gridDias"></div>
+        <div class="legenda-agenda" aria-label="Legenda dos marcadores">
+          <span><i class="marcador-compromisso"></i> Compromisso</span>
+          <span><i class="marcador-autoaviso"></i> Autoaviso</span>
+        </div>
+      </section>
+
+      <section class="painel-dia" aria-labelledby="tituloPainel">
+        <p class="sobrelinha">SUA ROTINA</p>
+        <h1 id="tituloPainel">Agenda do dia</h1>
+        <p id="dataSelecionada" class="data-selecionada"></p>
+
+        <div class="acoes-agenda">
+          <button id="btnNovoCompromisso" class="botao botao-compromisso" type="button">
+            <span aria-hidden="true">+</span> Compromisso
+          </button>
+          <button id="btnNovoAutoaviso" class="botao botao-autoaviso" type="button">
+            <span aria-hidden="true">+</span> Autoaviso
+          </button>
+        </div>
+
+        <p id="estadoVazio" class="estado-vazio" hidden>Nenhum item nesta data.</p>
+        <ul id="listaEventos" class="lista-eventos" aria-live="polite"></ul>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="dialogEvento" class="dialog-evento" aria-labelledby="tituloDialogo">
+    <form id="formEvento">
+      <div class="dialog-cabecalho">
+        <div>
+          <p id="tipoEventoDialogo" class="sobrelinha"></p>
+          <h2 id="tituloDialogo"></h2>
+        </div>
+        <button id="btnFecharDialogo" class="botao-fechar" type="button" aria-label="Fechar">&times;</button>
+      </div>
+
+      <label for="tituloEvento">Título</label>
+      <input id="tituloEvento" name="titulo" type="text" maxlength="90" required placeholder="Ex.: Reunião de supervisão">
+
+      <div class="campos-linha">
+        <div>
+          <label for="dataEvento">Data</label>
+          <input id="dataEvento" name="data" type="date" required>
+        </div>
+        <div>
+          <label for="horaEvento">Horário</label>
+          <input id="horaEvento" name="hora" type="time" required>
         </div>
       </div>
 
-      <div class="grid-semana">
-        <span>DOM</span>
-        <span>SEG</span>
-        <span>TER</span>
-        <span>QUA</span>
-        <span>QUI</span>
-        <span>SEX</span>
-        <span>SAB</span>
-      </div>
+      <label for="detalhesEvento">Observações <span>(opcional)</span></label>
+      <textarea id="detalhesEvento" name="detalhes" rows="3" maxlength="300" placeholder="Anotações para você"></textarea>
 
-      <div class="grid-dias" id="gridDias"></div>
-    </div>
-  </main>
+      <label id="opcaoNotificacao" class="opcao-notificacao" for="notificarEvento">
+        <input id="notificarEvento" name="notificar" type="checkbox">
+        <span>Avisar neste navegador no horário marcado</span>
+      </label>
+
+      <div class="acoes-dialogo">
+        <button id="btnCancelarDialogo" class="botao-cancelar" type="button">Cancelar</button>
+        <button class="botao botao-salvar" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
 
   <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
 
