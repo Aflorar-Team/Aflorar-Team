@@ -16,6 +16,7 @@
 body {
   background: var(--diario-bg);
   color: var(--diario-text);
+  overflow-x: hidden;
 }
 
 .layout {

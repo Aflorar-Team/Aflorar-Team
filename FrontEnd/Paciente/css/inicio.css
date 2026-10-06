@@ -2,6 +2,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   background: #f5f2ef;
+  overflow-x: hidden;
 }
 
 header {
@@ -337,4 +338,93 @@ button {
 
   border-radius: 20px;
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .cards {
+    flex-wrap: wrap;
+    margin: 16px;
+  }
+
+  .card {
+    min-width: 140px;
+    flex: 1 1 calc(50% - 12px);
+  }
+
+  .top-cards {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .welcome,
+  .barometro,
+  .assinatura,
+  .segunda-secao {
+    margin: 16px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .painel {
+    max-width: none;
+    margin: 0 16px 16px;
+  }
+
+  .grid-emocoes {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 12px;
+  }
+
+  .modal {
+    width: min(92vw, 500px);
+    padding: 22px 18px;
+  }
+
+  #modalHumor .modal {
+    width: min(90vw, 360px);
+    height: auto;
+    padding: 24px 18px;
+  }
+
+  #tituloHumor {
+    font-size: clamp(1.4rem, 6vw, 2rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .cards {
+    margin: 12px;
+  }
+
+  .card {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .welcome h2 {
+    font-size: 24px;
+  }
+
+  .welcome p,
+  .assinatura .sub,
+  .painel p {
+    font-size: 14px;
+  }
+
+  .grid-emocoes {
+    grid-template-columns: repeat(2, minmax(110px, 1fr));
+  }
+
+  .grid-emocoes div {
+    padding: 16px 10px;
+    font-size: 22px;
+  }
+
+  .assinatura {
+    padding: 24px 18px;
+  }
+
+  .assinatura ul {
+    text-align: left;
+  }
 }
