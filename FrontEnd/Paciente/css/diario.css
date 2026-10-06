@@ -19,6 +19,12 @@ body {
   overflow-x: hidden;
 }
 
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+}
+
 .layout {
   display: flex;
   min-height: 660px;
@@ -381,4 +387,116 @@ body {
   color: var(--diario-muted);
   background: var(--diario-sidebar);
   border-top: 1px solid var(--diario-sidebar-border);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .sidebar {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--diario-sidebar-border);
+  }
+
+  .main {
+    width: 100%;
+    padding: 18px 12px 28px;
+  }
+
+  .paper {
+    max-width: 100%;
+    min-height: 420px;
+    padding: 26px 22px 28px 42px;
+  }
+
+  .paper::before {
+    left: 20px;
+  }
+
+  .paper-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 560px) {
+  .layout {
+    width: 100%;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .page-item {
+    padding: 10px 12px;
+  }
+
+  .page-item .pg-mood,
+  .page-item .pg-date {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .main {
+    padding: 12px 8px 20px;
+  }
+
+  .paper {
+    width: 100%;
+    max-width: 100%;
+    min-height: 360px;
+    padding: 20px 14px 22px 30px;
+    background-position: 0 2px;
+  }
+
+  .paper::before {
+    left: 14px;
+  }
+
+  .mood-trigger {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mood-dropdown {
+    left: 0;
+    right: auto;
+    width: min(80vw, 260px);
+  }
+
+  .mood-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .writing-box {
+    padding: 12px 14px;
+  }
+
+  .lined-textarea {
+    min-height: 180px;
+    line-height: 24px;
+    font-size: 13px;
+  }
+
+  .tag {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .save-btn {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .page-footer {
+    font-size: 11px;
+    padding: 10px 8px;
+  }
 }
