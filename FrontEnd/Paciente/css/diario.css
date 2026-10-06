@@ -422,15 +422,11 @@ body {
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 768px) {
 
   html,
   body {
     overflow: auto;
-  }
-
-  .page-footer {
-    display: none;
   }
 
   .layout {
@@ -447,8 +443,16 @@ body {
     min-width: 0;
     border-right: none;
     border-bottom: 1px solid var(--diario-sidebar-border);
-    max-height: 220px;
+    max-height: 260px;
     overflow-y: auto;
+  }
+
+  .sidebar-title {
+    font-size: 9px;
+  }
+
+  .new-page-btn {
+    padding: 10px 12px;
   }
 
   .page-item {
@@ -477,7 +481,7 @@ body {
 
   .main {
     width: 100%;
-    padding: 8px 8px 12px;
+    padding: 12px 10px 24px;
     overflow: visible;
     height: auto;
   }
@@ -509,7 +513,7 @@ body {
   .mood-dropdown {
     left: 0;
     right: auto;
-    width: min(76vw, 220px);
+    width: min(78vw, 220px);
   }
 
   .mood-grid {
@@ -538,7 +542,5 @@ body {
 
   .page-footer {
     display: none;
-    font-size: 11px;
-    padding: 10px 8px;
   }
 }
