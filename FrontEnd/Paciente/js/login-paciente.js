@@ -1,14 +1,24 @@
 const form = document.getElementById("formLogin");
 const mensagemErro = document.getElementById("mensagemErro");
+const limitarSenha = (valor = "") => valor.slice(0, 20);
+
+document.getElementById("password")?.addEventListener("input", (event) => {
+  event.target.value = limitarSenha(event.target.value);
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const email = document.getElementById("email").value.trim();
-  const senha = document.getElementById("password").value.trim();
+  const senha = limitarSenha(document.getElementById("password").value.trim());
 
   if (!email || !senha) {
     mostrarErro("Preencha e-mail e senha.");
+    return;
+  }
+
+  if (senha.length > 20) {
+    mostrarErro("A senha deve ter no máximo 20 caracteres.");
     return;
   }
 

@@ -102,3 +102,24 @@ body {
 .chat-input button:hover {
   transform: scale(1.1);
 }
+
+@media (max-width: 620px) {
+  .chat-container {
+    width: calc(100% - 20px);
+    padding: 14px;
+    margin: 10px auto;
+  }
+
+  .message p {
+    max-width: 80%;
+    font-size: 14px;
+  }
+
+  .chat-input {
+    padding: 6px 8px;
+  }
+
+  .chat-input input {
+    padding: 8px;
+  }
+}

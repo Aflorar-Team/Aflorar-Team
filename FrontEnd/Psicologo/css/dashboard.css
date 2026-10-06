@@ -119,6 +119,66 @@
     opacity: 0.9;
   }
 
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 50;
+  }
+
+  .modal.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-content {
+    width: min(420px, 100%);
+    background: #fff;
+    border-radius: 18px;
+    padding: 24px 22px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+    transform: translateY(-10px);
+    transition: transform 0.2s ease;
+  }
+
+  .modal.active .modal-content {
+    transform: translateY(0);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .modal-header h4 {
+    color: #333;
+    font-size: 22px;
+  }
+
+  .modal-close {
+    border: none;
+    background: transparent;
+    color: #666;
+    font-size: 26px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal-content p {
+    color: #555;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
   .btn-demanda {
     background: #7A9C59;
   }
@@ -196,6 +256,7 @@
     border: 3px solid #FDF6F0;
     flex-shrink: 0;
   }
+
   .foto-psicologo {
     width: 52px;
     height: 52px;
@@ -204,6 +265,7 @@
     border: 3px solid #FDF6F0;
     flex-shrink: 0;
   }
+
   .card-paciente .descricao {
     font-size: 12px;
     color: #aaa;
@@ -233,4 +295,59 @@
     padding: 15px;
     font-size: 12px;
     color: #aaa;
+  }
+
+  @media (max-width: 900px) {
+    main {
+      grid-template-columns: 1fr;
+      gap: 24px;
+      padding: 28px 20px;
+    }
+
+    .right {
+      order: 2;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .navbar {
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      padding: 12px 14px;
+    }
+
+    .menu {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .menu a {
+      flex: 1 1 100%;
+    }
+
+    .boas-vindas {
+      padding: 24px 18px;
+    }
+
+    .btn-acao {
+      padding: 14px 18px;
+      font-size: 15px;
+    }
+
+    .card-paciente {
+      padding: 14px 16px;
+    }
+
+    .tag-nome,
+    .tag-horario {
+      font-size: 11px;
+      padding: 4px 10px;
+    }
+
+    .acoes-paciente {
+      justify-content: space-between;
+      gap: 8px;
+    }
   }

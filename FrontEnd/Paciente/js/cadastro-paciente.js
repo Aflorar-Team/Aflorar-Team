@@ -3,6 +3,7 @@ const mensagemErro = document.getElementById("mensagemErro");
 const mensagemSucesso = document.getElementById("mensagemSucesso");
 
 const limparNumeros = (valor = "") => valor.replace(/\D/g, "");
+const limitarSenha = (valor = "") => valor.slice(0, 20);
 
 function aplicarMascaraCpf(input) {
   let valor = limparNumeros(input.value).slice(0, 11);
@@ -21,13 +22,16 @@ function aplicarMascaraTelefone(input) {
 
 document.getElementById("cpf")?.addEventListener("input", (event) => aplicarMascaraCpf(event.target));
 document.getElementById("telefone")?.addEventListener("input", (event) => aplicarMascaraTelefone(event.target));
+document.getElementById("password")?.addEventListener("input", (event) => {
+  event.target.value = limitarSenha(event.target.value);
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const nome = document.getElementById("nome").value.trim();
   const email = document.getElementById("email").value.trim();
-  const senha = document.getElementById("password").value.trim();
+  const senha = limitarSenha(document.getElementById("password").value.trim());
   const cpf = limparNumeros(document.getElementById("cpf").value);
   const telefone = limparNumeros(document.getElementById("telefone").value);
 
@@ -46,8 +50,8 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (senha.length < 6) {
-    mostrarErro("A senha deve ter pelo menos 6 caracteres.");
+  if (senha.length < 6 || senha.length > 20) {
+    mostrarErro("A senha deve ter entre 6 e 20 caracteres.");
     return;
   }
 

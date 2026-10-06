@@ -68,6 +68,84 @@ button:hover {
   transform: scale(1.05);
 }
 
+@media (max-width: 768px) {
+  header {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px 24px;
+  }
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  nav a {
+    margin-left: 0;
+  }
+
+  .hero {
+    padding: 60px 30px;
+  }
+
+  .hero h1 {
+    font-size: 42px;
+  }
+
+  .hero p {
+    font-size: 18px;
+  }
+
+  section {
+    padding: 80px 24px;
+  }
+
+  .sobre h2,
+  .contato h2 {
+    font-size: 32px;
+  }
+
+  .sobre p,
+  .contato .subtitulo,
+  .info-item p,
+  .info-item span {
+    font-size: 18px;
+  }
+
+  .contato-form {
+    width: 100%;
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero h1 {
+    font-size: 34px;
+  }
+
+  .blob {
+    width: 220px;
+    height: 220px;
+    filter: blur(60px);
+  }
+
+  .blob1 {
+    left: 10%;
+    top: 20%;
+  }
+
+  .blob2 {
+    left: 45%;
+  }
+
+  .blob3 {
+    right: 5%;
+  }
+}
+
 /* BLOBS */
 .blob {
   position: absolute;
@@ -100,6 +178,7 @@ button:hover {
   top: 40%;
   right: 10%;
 }
+
 /* SEÇÕES GERAIS */
 section {
   padding: 120px 60px;
