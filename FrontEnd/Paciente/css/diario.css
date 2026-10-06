@@ -127,11 +127,14 @@ body {
 
 .main {
   flex: 1;
+  min-width: 0;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 28px 24px;
   background: var(--diario-bg);
+  overflow-y: auto;
+  height: 100%;
 }
 
 .paper {
@@ -390,39 +393,120 @@ body {
 }
 
 @media (max-width: 900px) {
+  body {
+    overflow: hidden;
+  }
+
   .layout {
-    flex-direction: column;
-    min-height: auto;
+    width: 100%;
+    height: calc(100dvh - 150px);
+    min-height: 0;
+    max-height: 100dvh;
   }
 
   .sidebar {
-    width: 100%;
-    min-width: 0;
-    border-right: none;
-    border-bottom: 1px solid var(--diario-sidebar-border);
+    width: 170px;
+    min-width: 170px;
   }
 
   .main {
-    width: 100%;
-    padding: 18px 12px 28px;
+    padding: 16px 12px 20px;
   }
 
   .paper {
-    max-width: 100%;
-    min-height: 420px;
-    padding: 26px 22px 28px 42px;
+    min-height: 360px;
+    padding: 24px 18px 24px 40px;
+  }
+}
+
+@media (max-width: 560px) {
+
+  html,
+  body {
+    overflow: hidden;
+  }
+
+  .page-footer {
+    display: none;
+  }
+
+  .layout {
+    width: 100%;
+    height: calc(100dvh - 100px);
+    min-height: 0;
+    max-height: 100dvh;
+  }
+
+  .sidebar {
+    width: 120px;
+    min-width: 120px;
+  }
+
+  .page-item {
+    padding: 10px 8px;
+  }
+
+  .pg-emoji {
+    font-size: 12px;
+  }
+
+  .pg-info {
+    min-width: 0;
+  }
+
+  .pg-mood,
+  .pg-date {
+    font-size: 9px;
+  }
+
+  .main {
+    padding: 8px 8px 12px;
+  }
+
+  .paper {
+    padding: 18px 12px 18px 26px;
   }
 
   .paper::before {
-    left: 20px;
+    left: 12px;
   }
 
-  .paper-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .mood-trigger {
+    width: 100%;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .mood-dropdown {
+    width: min(72vw, 220px);
+  }
+
+  .mood-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lined-textarea {
+    min-height: 170px;
+    font-size: 13px;
+  }
+
+  .tag {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  .save-btn {
+    width: 100%;
+    align-self: stretch;
   }
 }
+
+.paper-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 
 @media (max-width: 560px) {
   .layout {
