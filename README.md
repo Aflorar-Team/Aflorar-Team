@@ -153,15 +153,25 @@ Abra `http://localhost:3000` no navegador.
 | `SUPABASE_URL` | URL do projeto no Supabase |
 | `SUPABASE_KEY` | Chave anônima pública do Supabase |
 | `PORT` | Porta do servidor (padrão: 3000) |
+| `CORS_ORIGINS` | Opcional. Origens autorizadas, separadas por vírgula, quando o frontend estiver em outro domínio |
 
 ---
 
 ## 🌐 Deploy
 
-- **Frontend:** [aflorar-team.vercel.app](https://aflorar-team.vercel.app)
-- **Backend:** [aflorar-backend.onrender.com](https://aflorar-backend.onrender.com)
+### cPanel com Setup Node.js App
 
-> ⚠️ O backend no Render pode demorar ~30 segundos para responder após inatividade (plano gratuito).
+O servidor Express entrega tanto os arquivos estáticos de `FrontEnd/` quanto as rotas `/api`. Para publicar tudo na mesma origem:
+
+1. Envie a pasta `Aflorar` completa para sua conta, mantendo `FrontEnd/` e `BackEnd/` lado a lado. Não envie `BackEnd/node_modules/` nem `BackEnd/.env`.
+2. No **Setup Node.js App**, crie uma aplicação apontando para a pasta `BackEnd` (Application root) e escolha `server.js` como Startup file.
+3. Escolha uma versão Node.js 18 ou superior e execute `npm install` pelo painel.
+4. Cadastre no painel as variáveis `SUPABASE_URL`, `SUPABASE_KEY` e `GEMINI_API_KEY`. Adicione `SUPABASE_SERVICE_ROLE_KEY` se o projeto Supabase precisar que o backend crie/verifique a tabela `jardins`. Não defina `PORT` manualmente se o cPanel fornecer a porta da aplicação.
+5. Associe a aplicação ao domínio ou subdomínio escolhido e reinicie-a após salvar as variáveis.
+
+As chamadas do frontend usam caminhos relativos (`/api/...`), então site e API precisam estar servidos pelo mesmo domínio. Se mantiver temporariamente o frontend em outro domínio, informe esse domínio em `CORS_ORIGINS` no formato `https://site.exemplo.com`.
+
+O Supabase e a API Gemini continuam sendo serviços externos; somente o site e o backend Express passam para o cPanel.
 
 ---
 

@@ -25,7 +25,7 @@ const envFaltando = [
 
 if (envFaltando.length) {
   console.warn(
-    `⚠️ Variáveis de ambiente ausentes: ${envFaltando.join(", ")}. Configure no Render para evitar falhas em deploy.`
+    `⚠️ Variáveis de ambiente ausentes: ${envFaltando.join(", ")}. Configure-as no ambiente de deploy para evitar falhas.`
   );
 }
 
@@ -119,26 +119,25 @@ const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 
 const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
 
 app.use(express.static(path.resolve(__dirname, "../../FrontEnd")));
-const origensPermitidas = [
-  "https://aflorar-team.vercel.app",
-  /https:\/\/aflorar-team-.*\.vercel\.app/  // aceita qualquer branch do vercel
-];
 
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
+// O frontend e a API são servidos pela mesma origem no cPanel, então CORS
+// não é necessário. Para manter o frontend em outro domínio durante uma
+// transição, configure CORS_ORIGINS como uma lista separada por vírgulas.
+const origensPermitidas = readEnv("CORS_ORIGINS")
+  .split(",")
+  .map((origem) => origem.trim())
+  .filter(Boolean);
 
-    const permitida = origensPermitidas.some(o =>
-      typeof o === "string" ? o === origin : o.test(origin)
-    );
-
-    if (permitida) {
-      callback(null, true);
-    } else {
-      callback(new Error("Bloqueado pelo CORS"));
-    }
-  }
-}));
+if (origensPermitidas.length) {
+  app.use(cors({
+    origin(origin, callback) {
+      if (!origin || origensPermitidas.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Bloqueado pelo CORS"));
+    },
+  }));
+}
 app.use(express.json());
 
 app.use((error, req, res, next) => {
@@ -213,7 +212,7 @@ app.post("/api/cadastro-paciente", async (req, res) => {
 
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return res.status(500).json({
-      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no ambiente do servidor.",
     });
   }
 
@@ -246,7 +245,7 @@ app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
 
   if (!supabase) {
     return res.status(500).json({
-      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no Render.",
+      erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no ambiente do servidor.",
     });
   }
 

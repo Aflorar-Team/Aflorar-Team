@@ -70,7 +70,7 @@ form.addEventListener("submit", async (e) => {
   }
 
   try {
-    const response = await fetch("https://aflorar-backend.onrender.com/api/cadastro-psicologo", {
+    const response = await fetch("/api/cadastro-psicologo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cpf, crp, email, telefone, senha }),

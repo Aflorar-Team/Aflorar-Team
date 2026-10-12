@@ -10,7 +10,7 @@ blobs.forEach((blob, index) => {
 
     blob.style.transform = `translate(${x}px, ${y}px)`;
   }, 2000 + index * 500);
-});
+}); 
 
 document.querySelector('.contato-form').addEventListener('submit', function(e) {
   e.preventDefault();

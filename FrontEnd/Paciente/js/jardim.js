@@ -287,17 +287,7 @@
   const GARDEN_LOCAL_KEY = "aflorar_jardins_demo";
 
   function getApiCandidates() {
-    const renderOrigin = "https://aflorar-backend.onrender.com";
-    const localOrigins = ["http://localhost:3000", "http://localhost:3001"];
-    const currentOrigin = window.location.origin;
-    const isLocalBackend = ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"]
-      .includes(currentOrigin);
-
-    if (isLocalBackend) {
-      return [currentOrigin, ...localOrigins.filter(origin => origin !== currentOrigin), renderOrigin];
-    }
-
-    return [renderOrigin, ...localOrigins];
+    return [window.location.origin];
   }
 
   function loadLocalGarden() {
