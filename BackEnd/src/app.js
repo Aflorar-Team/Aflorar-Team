@@ -2,20 +2,56 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import path from "path";
+import crypto from "crypto";
 import { fileURLToPath } from "url";
 import {
+  CORS_ORIGINS,
   GEMINI_API_KEY,
   readEnv,
   SUPABASE_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_URL,
 } from "./config/env.js";
+import { getDbPool, ensureMysqlSchema, createDbId } from "./config/database.js";
 import { supabase } from "./config/supabase.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const dbPool = getDbPool();
+const useMysql = Boolean(dbPool);
+
+const hashPassword = (password, salt = crypto.randomBytes(16).toString("hex")) => {
+  const passwordHash = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
+  return { salt, hash: passwordHash };
+};
+
+const verifyPassword = (password, salt, hash) => {
+  try {
+    const candidate = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
+    return crypto.timingSafeEqual(Buffer.from(candidate, "hex"), Buffer.from(hash, "hex"));
+  } catch (error) {
+    return false;
+  }
+};
+
+const createSessionToken = (usuario) => Buffer.from(JSON.stringify({
+  id: String(usuario.id),
+  email: usuario.email,
+  tipo: usuario.tipo,
+  exp: Date.now() + 86400000,
+})).toString("base64url");
+
+const serializarUsuario = (usuario) => ({
+  id: String(usuario.id),
+  nome: usuario.nome,
+  email: usuario.email,
+  tipo: usuario.tipo,
+  ...(usuario.cpf ? { cpf: usuario.cpf } : {}),
+  ...(usuario.telefone ? { telefone: usuario.telefone } : {}),
+  ...(usuario.crp ? { crp: usuario.crp } : {}),
+});
 
 const envFaltando = [
   "SUPABASE_URL",
@@ -32,6 +68,19 @@ if (envFaltando.length) {
 const jardinsFallback = new Map();
 
 async function ensureJardinsTable() {
+  if (useMysql) {
+    try {
+      const ok = await ensureMysqlSchema();
+      if (ok) {
+        console.log("✅ Tabelas de usuários e jardins garantidas no MySQL do cPanel.");
+      }
+      return ok;
+    } catch (error) {
+      console.error("❌ Não foi possível criar as tabelas MySQL do cPanel:", error.message);
+      return false;
+    }
+  }
+
   if (!SUPABASE_URL) return false;
 
   const adminKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY;
@@ -123,10 +172,7 @@ app.use(express.static(path.resolve(__dirname, "../../FrontEnd")));
 // O frontend e a API são servidos pela mesma origem no cPanel, então CORS
 // não é necessário. Para manter o frontend em outro domínio durante uma
 // transição, configure CORS_ORIGINS como uma lista separada por vírgulas.
-const origensPermitidas = readEnv("CORS_ORIGINS")
-  .split(",")
-  .map((origem) => origem.trim())
-  .filter(Boolean);
+const origensPermitidas = CORS_ORIGINS;
 
 if (origensPermitidas.length) {
   app.use(cors({
@@ -210,6 +256,33 @@ app.post("/api/cadastro-paciente", async (req, res) => {
     return res.status(400).json({ erro: "Telefone inválido." });
   }
 
+  if (useMysql && dbPool) {
+    try {
+      const emailNormalizado = String(email).trim().toLowerCase();
+      const [usuarios] = await dbPool.execute("SELECT id FROM usuarios WHERE email = ? LIMIT 1", [emailNormalizado]);
+
+      if (usuarios.length) {
+        return res.status(409).json({ erro: "E-mail já cadastrado." });
+      }
+
+      const id = createDbId();
+      const { salt, hash } = hashPassword(String(senha));
+      await dbPool.execute(
+        "INSERT INTO usuarios (id, nome, email, password_hash, password_salt, cpf, telefone, tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, String(nome).trim(), emailNormalizado, hash, salt, cpfLimpo, telefoneLimpo, "paciente"]
+      );
+
+      return res.json({
+        mensagem: "Cadastro realizado com sucesso!",
+        usuario: serializarUsuario({ id, nome: String(nome).trim(), email: emailNormalizado, cpf: cpfLimpo, telefone: telefoneLimpo, tipo: "paciente" }),
+        token: createSessionToken({ id, email: emailNormalizado, tipo: "paciente" }),
+      });
+    } catch (error) {
+      console.error("Erro no cadastro do paciente no MySQL:", error);
+      return res.status(500).json({ erro: "Erro ao cadastrar paciente no banco do cPanel." });
+    }
+  }
+
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return res.status(500).json({
       erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no ambiente do servidor.",
@@ -243,6 +316,35 @@ app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
   if (!email || !senha)
     return res.status(400).json({ erro: "Preencha e-mail e senha." });
 
+  if (useMysql && dbPool) {
+    try {
+      const emailNormalizado = String(email).trim().toLowerCase();
+      const [usuarios] = await dbPool.execute(
+        "SELECT * FROM usuarios WHERE email = ? LIMIT 1",
+        [emailNormalizado]
+      );
+
+      if (!usuarios.length) {
+        return res.status(401).json({ erro: "E-mail ou senha inválidos." });
+      }
+
+      const usuario = usuarios[0];
+      const senhaValida = verifyPassword(String(senha), usuario.password_salt, usuario.password_hash);
+      if (!senhaValida) {
+        return res.status(401).json({ erro: "E-mail ou senha inválidos." });
+      }
+
+      return res.json({
+        mensagem: "Login realizado com sucesso!",
+        usuario: serializarUsuario(usuario),
+        token: createSessionToken(usuario),
+      });
+    } catch (error) {
+      console.error("Erro no login do paciente no MySQL:", error);
+      return res.status(500).json({ erro: "Erro de conexão com o banco do cPanel." });
+    }
+  }
+
   if (!supabase) {
     return res.status(500).json({
       erro: "Configuração do Supabase ausente no deploy. Verifique as variáveis SUPABASE_URL e SUPABASE_KEY no ambiente do servidor.",
@@ -273,6 +375,36 @@ app.post("/api/cadastro-psicologo", async (req, res) => {
   if (!cpf || !crp || !email || !telefone || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
 
+  if (useMysql && dbPool) {
+    try {
+      const emailNormalizado = String(email).trim().toLowerCase();
+      const cpfLimpo = normalizarCpf(cpf);
+      const telefoneLimpo = normalizarTelefone(telefone);
+      const crpLimpo = String(crp).replace(/\D/g, "");
+
+      const [usuarios] = await dbPool.execute("SELECT id FROM usuarios WHERE email = ? LIMIT 1", [emailNormalizado]);
+      if (usuarios.length) {
+        return res.status(409).json({ erro: "E-mail já cadastrado." });
+      }
+
+      const id = createDbId();
+      const { salt, hash } = hashPassword(String(senha));
+      await dbPool.execute(
+        "INSERT INTO usuarios (id, nome, email, password_hash, password_salt, cpf, telefone, crp, tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [id, "Psicólogo", emailNormalizado, hash, salt, cpfLimpo, telefoneLimpo, crpLimpo, "psicologo"]
+      );
+
+      return res.json({
+        mensagem: "Cadastro realizado com sucesso!",
+        usuario: serializarUsuario({ id, nome: "Psicólogo", email: emailNormalizado, cpf: cpfLimpo, telefone: telefoneLimpo, crp: crpLimpo, tipo: "psicologo" }),
+        token: createSessionToken({ id, email: emailNormalizado, tipo: "psicologo" }),
+      });
+    } catch (error) {
+      console.error("Erro no cadastro do psicólogo no MySQL:", error);
+      return res.status(500).json({ erro: "Erro ao cadastrar psicólogo no banco do cPanel." });
+    }
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password: senha,
@@ -288,6 +420,36 @@ app.post("/api/login-psicologo", async (req, res) => {
   if (!email || !senha)
     return res.status(400).json({ erro: "Preencha e-mail e senha." });
 
+  if (useMysql && dbPool) {
+    try {
+      const emailNormalizado = String(email).trim().toLowerCase();
+      const [usuarios] = await dbPool.execute("SELECT * FROM usuarios WHERE email = ? LIMIT 1", [emailNormalizado]);
+
+      if (!usuarios.length) {
+        return res.status(401).json({ erro: "E-mail ou senha inválidos." });
+      }
+
+      const usuario = usuarios[0];
+      if (usuario.tipo !== "psicologo") {
+        return res.status(403).json({ erro: "Acesso negado. Use o login de paciente." });
+      }
+
+      const senhaValida = verifyPassword(String(senha), usuario.password_salt, usuario.password_hash);
+      if (!senhaValida) {
+        return res.status(401).json({ erro: "E-mail ou senha inválidos." });
+      }
+
+      return res.json({
+        mensagem: "Login realizado com sucesso!",
+        usuario: serializarUsuario(usuario),
+        token: createSessionToken(usuario),
+      });
+    } catch (error) {
+      console.error("Erro no login do psicólogo no MySQL:", error);
+      return res.status(500).json({ erro: "Erro de conexão com o banco do cPanel." });
+    }
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password: senha,
@@ -295,7 +457,6 @@ app.post("/api/login-psicologo", async (req, res) => {
 
   if (error) return res.status(400).json({ erro: "E-mail ou senha inválidos." });
 
-  // Verifica se é realmente psicólogo
   const tipo = data.user.user_metadata?.tipo;
   if (tipo !== "psicologo") {
     return res.status(403).json({ erro: "Acesso negado. Use o login de paciente." });
@@ -313,6 +474,28 @@ app.get("/api/jardins", async (req, res) => {
 
   if (!usuario_id) {
     return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  }
+
+  if (useMysql && dbPool) {
+    try {
+      const [rows] = await dbPool.execute(
+        "SELECT * FROM jardins WHERE usuario_id = ? ORDER BY posicao ASC, created_at ASC",
+        [String(usuario_id)]
+      );
+
+      const canteiros = rows.map((row) => ({
+        ...row,
+        id: String(row.id),
+        usuario_id: String(row.usuario_id),
+      }));
+
+      setJardinsFallback(String(usuario_id), canteiros);
+      return res.json({ canteiros });
+    } catch (error) {
+      console.error("Erro ao listar jardins no MySQL:", error);
+      const canteiros = getJardinsFallback(String(usuario_id));
+      return res.json({ canteiros, aviso: "Erro ao consultar o banco do cPanel. Usando fallback local." });
+    }
   }
 
   if (!supabase) {
@@ -354,6 +537,39 @@ app.post("/api/jardins", async (req, res) => {
 
   if (!usuario_id || !nome || posicao === undefined) {
     return res.status(400).json({ erro: "usuario_id, nome e posicao são obrigatórios." });
+  }
+
+  if (useMysql && dbPool) {
+    try {
+      const novoCanteiro = {
+        id: createDbId(),
+        usuario_id: String(usuario_id),
+        nome: String(nome).trim(),
+        nivel: Number(nivel) || 1,
+        posicao: Number(posicao),
+      };
+
+      await dbPool.execute(
+        "INSERT INTO jardins (id, usuario_id, nome, nivel, posicao) VALUES (?, ?, ?, ?, ?)",
+        [novoCanteiro.id, novoCanteiro.usuario_id, novoCanteiro.nome, novoCanteiro.nivel, novoCanteiro.posicao]
+      );
+
+      const canteiros = getJardinsFallback(String(usuario_id));
+      setJardinsFallback(String(usuario_id), [...canteiros, novoCanteiro]);
+      return res.status(201).json({ canteiro: novoCanteiro });
+    } catch (error) {
+      console.error("Erro ao criar canteiro no MySQL:", error);
+      const canteiros = getJardinsFallback(String(usuario_id));
+      const novoCanteiro = {
+        id: `demo-${Date.now()}`,
+        usuario_id: String(usuario_id),
+        nome: String(nome).trim(),
+        nivel: Number(nivel) || 1,
+        posicao: Number(posicao),
+      };
+      setJardinsFallback(String(usuario_id), [...canteiros, novoCanteiro]);
+      return res.status(201).json({ canteiro: novoCanteiro, aviso: "Banco do cPanel indisponível; usando fallback local." });
+    }
   }
 
   if (!supabase) {
@@ -425,6 +641,56 @@ app.put("/api/jardins/:id", async (req, res) => {
 
   if (!usuario_id) {
     return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  }
+
+  if (useMysql && dbPool) {
+    try {
+      const campos = [];
+      const valores = [];
+
+      if (nome !== undefined) {
+        campos.push("nome = ?");
+        valores.push(String(nome).trim());
+      }
+
+      if (nivel !== undefined) {
+        campos.push("nivel = ?");
+        valores.push(Number(nivel) || 1);
+      }
+
+      if (!campos.length) {
+        return res.status(400).json({ erro: "Nenhum campo para atualizar." });
+      }
+
+      valores.push(String(id));
+      valores.push(String(usuario_id));
+
+      const [resultado] = await dbPool.execute(
+        `UPDATE jardins SET ${campos.join(", ")} WHERE id = ? AND usuario_id = ?`,
+        valores
+      );
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({ erro: "Canteiro não encontrado no banco do cPanel." });
+      }
+
+      const [rows] = await dbPool.execute("SELECT * FROM jardins WHERE id = ? AND usuario_id = ? LIMIT 1", [String(id), String(usuario_id)]);
+      const canteiro = rows[0] ? { ...rows[0], id: String(rows[0].id), usuario_id: String(rows[0].usuario_id) } : null;
+      const canteiros = getJardinsFallback(String(usuario_id));
+      if (canteiro) {
+        const idx = canteiros.findIndex((item) => String(item.id) === String(id));
+        if (idx >= 0) {
+          canteiros[idx] = canteiro;
+        } else {
+          canteiros.push(canteiro);
+        }
+        setJardinsFallback(String(usuario_id), canteiros);
+      }
+      return res.json({ canteiro });
+    } catch (error) {
+      console.error("Erro ao atualizar canteiro no MySQL:", error);
+      return res.status(500).json({ erro: "Erro ao atualizar canteiro no banco do cPanel." });
+    }
   }
 
   if (!supabase) {
