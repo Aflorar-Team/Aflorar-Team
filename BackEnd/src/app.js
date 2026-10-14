@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { fileURLToPath } from "url";
 import {
   CORS_ORIGINS,
+  DB_TYPE,
   GEMINI_API_KEY,
   readEnv,
   SUPABASE_KEY,
@@ -20,7 +21,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const dbPool = getDbPool();
-const useMysql = Boolean(dbPool);
+const useMysql = DB_TYPE === "mysql" && Boolean(dbPool);
 
 const hashPassword = (password, salt = crypto.randomBytes(16).toString("hex")) => {
   const passwordHash = crypto.pbkdf2Sync(password, salt, 100000, 64, "sha512").toString("hex");
@@ -166,6 +167,14 @@ const setJardinsFallback = (usuarioId, canteiros) => {
 
 const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
 const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
+const registrarErroMysqlCadastro = (tipo, error) => {
+  console.error(`Erro no cadastro ${tipo} MySQL: ${JSON.stringify({
+    code: error?.code || null,
+    errno: error?.errno || null,
+    sqlState: error?.sqlState || null,
+    message: error?.sqlMessage || error?.message || String(error),
+  })}`);
+};
 
 app.use(express.static(path.resolve(__dirname, "../../FrontEnd")));
 
@@ -278,7 +287,7 @@ app.post("/api/cadastro-paciente", async (req, res) => {
         token: createSessionToken({ id, email: emailNormalizado, tipo: "paciente" }),
       });
     } catch (error) {
-      console.error("Erro no cadastro do paciente no MySQL:", error);
+      registrarErroMysqlCadastro("do paciente", error);
       return res.status(500).json({ erro: "Erro ao cadastrar paciente no banco do cPanel." });
     }
   }
@@ -400,7 +409,7 @@ app.post("/api/cadastro-psicologo", async (req, res) => {
         token: createSessionToken({ id, email: emailNormalizado, tipo: "psicologo" }),
       });
     } catch (error) {
-      console.error("Erro no cadastro do psicólogo no MySQL:", error);
+      registrarErroMysqlCadastro("do psicólogo", error);
       return res.status(500).json({ erro: "Erro ao cadastrar psicólogo no banco do cPanel." });
     }
   }

@@ -106,7 +106,7 @@ No frontend, cada perfil mantém suas páginas, estilos e scripts próximos. O b
 ## ⚙️ Como Rodar Localmente
 
 ### Pré-requisitos
-- [Node.js](https://nodejs.org/) v18+
+- [Node.js](https://nodejs.org/) v22+
 - Conta no [Supabase](https://supabase.com)
 - Chave de API do [Google AI Studio](https://aistudio.google.com)
 
@@ -152,6 +152,7 @@ Abra `http://localhost:3000` no navegador.
 | `GEMINI_API_KEY` | Chave da API do Google Gemini |
 | `SUPABASE_URL` | URL do projeto no Supabase |
 | `SUPABASE_KEY` | Chave anônima pública do Supabase |
+| `DB_TYPE` | Banco usado pela API: `supabase` ou `mysql` (padrão: Supabase quando suas credenciais estão configuradas; caso contrário, MySQL) |
 | `PORT` | Porta do servidor (padrão: 3000) |
 | `CORS_ORIGINS` | Opcional. Origens autorizadas, separadas por vírgula, quando o frontend estiver em outro domínio |
 
@@ -165,8 +166,8 @@ O servidor Express entrega tanto os arquivos estáticos de `FrontEnd/` quanto as
 
 1. Envie a pasta `Aflorar` completa para sua conta, mantendo `FrontEnd/` e `BackEnd/` lado a lado. Não envie `BackEnd/node_modules/` nem `BackEnd/.env`.
 2. No **Setup Node.js App**, crie uma aplicação apontando para a pasta `BackEnd` (Application root) e escolha `server.js` como Startup file.
-3. Escolha uma versão Node.js 18 ou superior e execute `npm install` pelo painel.
-4. Cadastre no painel as variáveis `SUPABASE_URL`, `SUPABASE_KEY` e `GEMINI_API_KEY`. Adicione `SUPABASE_SERVICE_ROLE_KEY` se o projeto Supabase precisar que o backend crie/verifique a tabela `jardins`. Não defina `PORT` manualmente se o cPanel fornecer a porta da aplicação.
+3. Escolha Node.js 22 ou superior e execute `npm install` pelo painel.
+4. Para usar o Supabase, cadastre `DB_TYPE=supabase`, `SUPABASE_URL`, `SUPABASE_KEY` e `GEMINI_API_KEY` no painel. Adicione `SUPABASE_SERVICE_ROLE_KEY` se o projeto Supabase precisar que o backend crie/verifique a tabela `jardins`. Para usar MySQL, configure `DB_TYPE=mysql` e as variáveis `DB_HOST`, `DB_USER`, `DB_PASSWORD` e `DB_NAME`. Não defina `PORT` manualmente se o cPanel fornecer a porta da aplicação.
 5. Associe a aplicação ao domínio ou subdomínio escolhido e reinicie-a após salvar as variáveis.
 
 As chamadas do frontend usam caminhos relativos (`/api/...`), então site e API precisam estar servidos pelo mesmo domínio. Se mantiver temporariamente o frontend em outro domínio, informe esse domínio em `CORS_ORIGINS` no formato `https://site.exemplo.com`.

@@ -18,5 +18,5 @@ export const DB_USER = readEnv("DB_USER");
 export const DB_PASSWORD = readEnv("DB_PASSWORD");
 export const DB_NAME = readEnv("DB_NAME");
 export const DB_PORT = readEnv("DB_PORT") || "3306";
-export const DB_TYPE = (readEnv("DB_TYPE") || "mysql").toLowerCase();
+export const DB_TYPE = (readEnv("DB_TYPE") || (SUPABASE_URL && SUPABASE_KEY ? "supabase" : "mysql")).toLowerCase();
 export const CORS_ORIGINS = readEnv("CORS_ORIGINS").split(",").map((origem) => origem.trim()).filter(Boolean);
