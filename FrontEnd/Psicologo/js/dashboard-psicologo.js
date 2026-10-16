@@ -1,49 +1,212 @@
-// Verifica se o usuário está logado como psicólogo
-const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+const usuario = (() => {
+  try {
+    return JSON.parse(localStorage.getItem("usuario") || "null");
+  } catch {
+    return null;
+  }
+})();
 const tipo = localStorage.getItem("tipo");
 
 if (!usuario || tipo !== "psicologo") {
   window.location.href = "./login-psicologo.html";
 }
 
-// Exibe o nome do psicólogo no boas-vindas
+const idPsicologo = usuario?.id || usuario?.email || "local";
+const chaveAgenda = `aflorar.agenda.${idPsicologo}`;
+const chavePacientes = `aflorar.pacientes-vinculados.${idPsicologo}`;
+const modal = document.getElementById("popupModal");
+const popupTitulo = document.getElementById("popupTitulo");
+const popupConteudo = document.getElementById("popupConteudo");
+const modalClose = document.querySelector(".modal-close");
+let ultimoAcionador = null;
+
 const boasVindas = document.querySelector(".boas-vindas h2");
 if (usuario?.user_metadata?.nome) {
   boasVindas.textContent = `Bem-Vindo(a), ${usuario.user_metadata.nome}!`;
 }
 
-const modal = document.getElementById("popupModal");
-const popupTitulo = document.getElementById("popupTitulo");
-const popupTexto = document.getElementById("popupTexto");
-const modalClose = document.querySelector(".modal-close");
+function criarElemento(tag, classe, texto) {
+  const elemento = document.createElement(tag);
+  if (classe) elemento.className = classe;
+  if (texto !== undefined) elemento.textContent = texto;
+  return elemento;
+}
+
+function lerLista(chave) {
+  try {
+    const dados = JSON.parse(localStorage.getItem(chave) || "[]");
+    return Array.isArray(dados) ? dados : [];
+  } catch {
+    return [];
+  }
+}
+
+function dataLocal(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+function renderizarDemandas() {
+  const hoje = dataLocal(new Date());
+  const eventos = lerLista(chaveAgenda)
+    .filter((evento) => evento.data === hoje)
+    .sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
+  const lista = criarElemento("ul", "painel-lista");
+
+  if (!eventos.length) {
+    lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum compromisso ou autoaviso marcado para hoje."));
+  } else {
+    eventos.forEach((evento) => {
+      const item = criarElemento("li", "item-demanda");
+      const horario = criarElemento("time", "item-horario", evento.hora || "--:--");
+      const detalhes = criarElemento("div", "item-demanda-texto");
+      detalhes.appendChild(criarElemento("strong", "", evento.titulo || "Sem título"));
+      detalhes.appendChild(criarElemento("span", "", evento.tipo === "autoaviso" ? "Autoaviso" : "Compromisso"));
+      if (evento.detalhes) detalhes.appendChild(criarElemento("p", "", evento.detalhes));
+      item.append(horario, detalhes);
+      lista.appendChild(item);
+    });
+  }
+
+  const agendaSection = criarElemento("section", "popup-secao");
+  agendaSection.appendChild(criarElemento("h5", "", "Agenda de hoje"));
+  agendaSection.appendChild(lista);
+
+  const anotacoes = (localStorage.getItem("anotacoes_psicologo") || "").trim();
+  const anotacoesSection = criarElemento("section", "popup-secao");
+  anotacoesSection.appendChild(criarElemento("h5", "", "Anotações salvas"));
+  anotacoesSection.appendChild(anotacoes
+    ? criarElemento("p", "texto-anotacao", anotacoes)
+    : criarElemento("p", "estado-vazio-popup", "Nenhuma anotação salva ainda."));
+
+  const avisoMensagens = criarElemento(
+    "div",
+    "aviso-integracao",
+    "As mensagens de pacientes ainda não aparecem aqui: o chat atual conversa com a Flora IA e não salva mensagens para o psicólogo."
+  );
+  const acaoMensagens = criarElemento("button", "link-popup", "Ver mensagens recentes");
+  acaoMensagens.type = "button";
+  acaoMensagens.dataset.openPopup = "mensagens";
+  avisoMensagens.appendChild(acaoMensagens);
+
+  popupConteudo.replaceChildren(agendaSection, anotacoesSection, avisoMensagens);
+}
+
+function renderizarMensagens() {
+  const estado = criarElemento("div", "estado-mensagens");
+  estado.appendChild(criarElemento("span", "icone-estado", "…"));
+  estado.appendChild(criarElemento("h5", "", "Nenhuma mensagem disponível"));
+  estado.appendChild(criarElemento(
+    "p",
+    "",
+    "As mensagens enviadas pelos pacientes ainda não são armazenadas nem compartilhadas com esta área. O chat existente atende conversas com a Flora IA."
+  ));
+  estado.appendChild(criarElemento("p", "nota-integracao", "Quando o chat entre paciente e psicólogo estiver conectado ao sistema, as conversas mais recentes aparecerão aqui."));
+  popupConteudo.replaceChildren(estado);
+}
+
+function renderizarPacientes() {
+  const formulario = document.createElement("form");
+  formulario.className = "form-paciente-codigo";
+  formulario.innerHTML = `
+    <label for="codigoPaciente">Código único do paciente</label>
+    <div class="campo-codigo">
+      <input id="codigoPaciente" name="codigo" type="text" maxlength="32" minlength="4" required
+        autocomplete="off" autocapitalize="characters" placeholder="Ex.: AFL-8K29Q" aria-describedby="ajudaCodigo erroCodigo">
+      <button class="botao-vincular" type="submit">Vincular</button>
+    </div>
+    <p id="ajudaCodigo" class="ajuda-campo">Informe o código fornecido pelo paciente. Letras e números, com hífen opcional.</p>
+    <p id="erroCodigo" class="erro-campo" role="alert" hidden></p>
+  `;
+
+  const listaSection = criarElemento("section", "popup-secao pacientes-vinculados");
+  listaSection.appendChild(criarElemento("h5", "", "Pacientes vinculados"));
+  const lista = criarElemento("ul", "lista-codigos-paciente");
+  const status = criarElemento("p", "status-vinculo");
+
+  function atualizarLista() {
+    const pacientes = lerLista(chavePacientes);
+    lista.replaceChildren();
+    if (!pacientes.length) {
+      lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum paciente vinculado por código."));
+    } else {
+      pacientes.forEach((paciente) => {
+        const linha = criarElemento("li", "linha-codigo-paciente");
+        linha.appendChild(criarElemento("span", "", paciente.codigo));
+        linha.appendChild(criarElemento("time", "", new Date(paciente.adicionadoEm).toLocaleDateString("pt-BR")));
+        lista.appendChild(linha);
+      });
+    }
+  }
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const campo = formulario.elements.codigo;
+    const erro = formulario.querySelector("#erroCodigo");
+    const codigo = campo.value.trim().toUpperCase();
+    const pacientes = lerLista(chavePacientes);
+    erro.hidden = true;
+    status.textContent = "";
+
+    if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(codigo)) {
+      erro.textContent = "Use apenas letras, números e hífens.";
+      erro.hidden = false;
+      campo.focus();
+      return;
+    }
+    if (pacientes.some((paciente) => paciente.codigo === codigo)) {
+      erro.textContent = "Este código já está vinculado a este perfil.";
+      erro.hidden = false;
+      campo.focus();
+      return;
+    }
+
+    pacientes.push({ codigo, adicionadoEm: new Date().toISOString() });
+    try {
+      localStorage.setItem(chavePacientes, JSON.stringify(pacientes));
+      campo.value = "";
+      atualizarLista();
+      status.textContent = "Código vinculado neste navegador.";
+    } catch {
+      erro.textContent = "Não foi possível salvar o vínculo neste navegador.";
+      erro.hidden = false;
+    }
+  });
+
+  const aviso = criarElemento(
+    "p",
+    "aviso-integracao",
+    "A validação de que o código pertence a um paciente depende da integração com o cadastro central. Por enquanto, o vínculo fica salvo somente neste navegador."
+  );
+  listaSection.append(lista, status);
+  popupConteudo.replaceChildren(formulario, aviso, listaSection);
+  atualizarLista();
+}
 
 const popups = {
-  demanda: {
-    titulo: "Demanda de hoje",
-    texto: "Aqui você visualiza as solicitações de atendimento, prioridades e o resumo das demandas pendentes do dia."
-  },
-  mensagens: {
-    titulo: "Mensagens",
-    texto: "Este espaço reunirá suas mensagens recentes com pacientes, lembretes e respostas pendentes da sua agenda."
-  },
-  pacientes: {
-    titulo: "Adicionar Pacientes",
-    texto: "Aqui você poderá cadastrar novos pacientes, vincular prontuários e iniciar o acompanhamento de forma organizada."
-  }
+  demanda: { titulo: "Demandas de hoje", renderizar: renderizarDemandas },
+  mensagens: { titulo: "Mensagens recentes", renderizar: renderizarMensagens },
+  pacientes: { titulo: "Adicionar paciente", renderizar: renderizarPacientes },
 };
 
 function abrirPopup(chave) {
   const item = popups[chave];
   if (!item || !modal) return;
 
+  ultimoAcionador = document.activeElement;
   popupTitulo.textContent = item.titulo;
-  popupTexto.textContent = item.texto;
-  modal.classList.add("active");
+  item.renderizar();
   modal.setAttribute("aria-hidden", "false");
+  modal.classList.add("active");
+  modalClose?.focus();
+  if (chave === "pacientes") document.getElementById("codigoPaciente")?.focus();
 }
 
 function fecharPopup() {
   if (!modal) return;
+  ultimoAcionador?.focus();
   modal.classList.remove("active");
   modal.setAttribute("aria-hidden", "true");
 }
@@ -52,18 +215,17 @@ document.querySelectorAll(".btn-acao").forEach((botao) => {
   botao.addEventListener("click", () => abrirPopup(botao.dataset.popup));
 });
 
-if (modalClose) {
-  modalClose.addEventListener("click", fecharPopup);
-}
+popupConteudo.addEventListener("click", (evento) => {
+  const botao = evento.target.closest("[data-open-popup]");
+  if (botao) abrirPopup(botao.dataset.openPopup);
+});
 
-if (modal) {
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) fecharPopup();
-  });
-}
+modalClose?.addEventListener("click", fecharPopup);
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && modal?.classList.contains("active")) {
-    fecharPopup();
-  }
+modal?.addEventListener("click", (evento) => {
+  if (evento.target === modal) fecharPopup();
+});
+
+document.addEventListener("keydown", (evento) => {
+  if (evento.key === "Escape" && modal?.classList.contains("active")) fecharPopup();
 });

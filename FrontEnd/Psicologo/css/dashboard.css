@@ -149,10 +149,12 @@
   }
 
   .modal-content {
-    width: min(420px, 100%);
+    width: min(680px, 100%);
+    max-height: min(82vh, 760px);
+    overflow-y: auto;
     background: #fff;
-    border-radius: 18px;
-    padding: 24px 22px;
+    border-radius: 12px;
+    padding: 24px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
     transform: translateY(-10px);
     transition: transform 0.2s ease;
@@ -187,6 +189,206 @@
     color: #555;
     font-size: 15px;
     line-height: 1.6;
+  }
+
+  .popup-secao {
+    margin-top: 22px;
+  }
+
+  .popup-secao h5,
+  .estado-mensagens h5 {
+    color: #333;
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .painel-lista,
+  .lista-codigos-paciente {
+    list-style: none;
+  }
+
+  .painel-lista {
+    border-top: 1px solid #eee7e1;
+  }
+
+  .item-demanda {
+    display: flex;
+    gap: 16px;
+    padding: 14px 4px;
+    border-bottom: 1px solid #eee7e1;
+  }
+
+  .item-horario {
+    min-width: 54px;
+    color: #4A7C59;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .item-demanda-texto {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .item-demanda-texto strong {
+    color: #333;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .item-demanda-texto span,
+  .item-demanda-texto p {
+    color: #777;
+    font-size: 13px;
+  }
+
+  .estado-vazio-popup {
+    padding: 14px 4px;
+    color: #777;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .texto-anotacao {
+    padding: 14px;
+    border-left: 3px solid #7A9C59;
+    background: #f5f8f1;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .aviso-integracao {
+    margin-top: 20px;
+    padding: 12px 14px;
+    border-left: 3px solid #F4A261;
+    background: #fff7ef;
+    color: #624b38 !important;
+    font-size: 13px !important;
+  }
+
+  .link-popup {
+    display: block;
+    margin-top: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #8b4d35;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .estado-mensagens {
+    display: grid;
+    justify-items: center;
+    padding: 30px 18px 12px;
+    text-align: center;
+  }
+
+  .estado-mensagens p {
+    max-width: 480px;
+    font-size: 14px;
+  }
+
+  .estado-mensagens .nota-integracao {
+    margin-top: 12px;
+    color: #888;
+    font-size: 13px;
+  }
+
+  .icone-estado {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    aspect-ratio: 1;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: #fce9e9;
+    color: #c75860;
+    font-size: 25px;
+  }
+
+  .form-paciente-codigo {
+    display: grid;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .form-paciente-codigo label {
+    color: #333;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .campo-codigo {
+    display: flex;
+    gap: 10px;
+  }
+
+  .campo-codigo input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #d8d2cc;
+    border-radius: 6px;
+    color: #333;
+    font: inherit;
+    text-transform: uppercase;
+  }
+
+  .campo-codigo input:focus {
+    outline: 2px solid #7A9C59;
+    outline-offset: 1px;
+  }
+
+  .botao-vincular {
+    padding: 0 18px;
+    border: 0;
+    border-radius: 6px;
+    background: #4A7C59;
+    color: white;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .ajuda-campo,
+  .erro-campo,
+  .status-vinculo {
+    font-size: 13px !important;
+  }
+
+  .ajuda-campo {
+    color: #777 !important;
+  }
+
+  .erro-campo {
+    color: #a9353d !important;
+  }
+
+  .status-vinculo {
+    min-height: 20px;
+    margin-top: 8px;
+    color: #39704a !important;
+  }
+
+  .linha-codigo-paciente {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 4px;
+    border-top: 1px solid #eee7e1;
+    color: #333;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .linha-codigo-paciente time {
+    color: #888;
+    font-size: 13px;
+    font-weight: 400;
   }
 
   .btn-demanda {
@@ -387,6 +589,14 @@
 
     .modal-content {
       padding: 18px 16px;
+    }
+
+    .campo-codigo {
+      flex-direction: column;
+    }
+
+    .botao-vincular {
+      min-height: 44px;
     }
 
     .modal-header h4 {
