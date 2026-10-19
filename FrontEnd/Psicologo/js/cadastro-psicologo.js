@@ -85,7 +85,9 @@ form.addEventListener("submit", async (e) => {
     }
 
     mensagemErro.style.display = "none";
-    mensagemSucesso.textContent = "Conta criada! Verifique seu e-mail para confirmar.";
+    mensagemSucesso.textContent = data.contaExistente
+      ? "Perfil de psicólogo adicionado à sua conta. Faça login para continuar."
+      : "Conta criada! Verifique seu e-mail para confirmar.";
     mensagemSucesso.style.display = "block";
 
     setTimeout(() => {
