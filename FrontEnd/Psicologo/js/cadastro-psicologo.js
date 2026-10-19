@@ -38,13 +38,14 @@ document.getElementById("password")?.addEventListener("input", (event) => {
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
+  const nome = document.getElementById("nome").value.trim();
   const cpf = limparNumeros(document.getElementById("cpf").value);
   const crp = limparNumeros(document.getElementById("crp").value);
   const email = document.getElementById("email").value.trim();
   const telefone = limparNumeros(document.getElementById("telefone").value);
   const senha = limitarSenha(document.getElementById("password").value.trim());
 
-  if (!cpf || !crp || !email || !telefone || !senha) {
+  if (!nome || !cpf || !crp || !email || !telefone || !senha) {
     mostrarErro("Preencha todos os campos.");
     return;
   }
@@ -73,7 +74,7 @@ form.addEventListener("submit", async (e) => {
     const response = await fetch("https://aflorar-backend.onrender.com/api/cadastro-psicologo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cpf, crp, email, telefone, senha }),
+      body: JSON.stringify({ nome, cpf, crp, email, telefone, senha }),
     });
 
     const data = await response.json();

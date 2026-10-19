@@ -270,14 +270,14 @@ app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
 });
 
 app.post("/api/cadastro-psicologo", async (req, res) => {
-  const { cpf, crp, email, telefone, senha } = req.body;
-  if (!cpf || !crp || !email || !telefone || !senha)
+  const { nome, cpf, crp, email, telefone, senha } = req.body;
+  if (!nome || !cpf || !crp || !email || !telefone || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password: senha,
-    options: { data: { cpf, crp, telefone, tipo: "psicologo" } },
+    options: { data: { nome, cpf, crp, telefone, tipo: "psicologo" } },
   });
 
   if (error) return res.status(400).json({ erro: error.message });
