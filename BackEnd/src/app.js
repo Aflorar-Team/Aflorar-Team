@@ -119,9 +119,13 @@ const setJardinsFallback = (usuarioId, canteiros) => {
 const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
 const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
 
-const criarClienteAuth = () => createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+const criarClienteAuth = () => createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY || SUPABASE_SERVICE_ROLE_KEY,
+  {
+    auth: { persistSession: false, autoRefreshToken: false },
+  },
+);
 
 const usuarioTemPerfil = (usuario, perfil) => {
   const metadados = usuario?.user_metadata || {};
@@ -175,6 +179,13 @@ async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
     return { usuario: data.user, contaExistente: true };
   }
 
+  if (erroLogin?.message?.toLowerCase().includes("email not confirmed")) {
+    return {
+      erro: "Confirme o e-mail da conta existente antes de adicionar outro perfil.",
+      status: 409,
+    };
+  }
+
   const { data, error } = await clienteAuth.auth.signUp({
     email,
     password: senha,
@@ -188,7 +199,15 @@ async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
     },
   });
 
-  if (error) return { erro: error.message, status: 400 };
+  if (error) {
+    const emailJaCadastrado = /already registered|user exists|email.*(taken|exists)/i.test(error.message || "");
+    return {
+      erro: emailJaCadastrado
+        ? "Este e-mail já possui uma conta. Confirme o e-mail e use a senha já cadastrada para adicionar outro perfil."
+        : error.message,
+      status: emailJaCadastrado ? 409 : 400,
+    };
+  }
   if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
     return {
       erro: "Este e-mail já possui uma conta. Confirme o e-mail e use a senha já cadastrada para adicionar outro perfil.",
