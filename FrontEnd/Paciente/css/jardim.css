@@ -899,7 +899,6 @@
  }
 
  .evolution-register,
- .evolution-public,
  .evolution-edit,
  .compose-category,
  .compose-back,
@@ -929,26 +928,6 @@
    width: 24px;
    height: 24px;
    flex: none;
- }
-
- .evolution-public {
-   display: flex;
-   flex: 1;
-   align-items: center;
-   justify-content: center;
-   gap: 10px;
-   padding: 8px 12px;
-   border-radius: 24px;
-   background: #fff;
-   color: #76935F;
-   font-size: 13px;
-   font-weight: 800;
-   text-transform: uppercase;
- }
-
- .evolution-public[aria-pressed="true"] {
-   background: #78965F;
-   color: #fff;
  }
 
  .evolution-heading {
@@ -1367,8 +1346,7 @@
      gap: 6px;
    }
 
-   .evolution-register,
-   .evolution-public {
+   .evolution-register {
      min-height: 38px;
      width: 100%;
      font-size: 10px;

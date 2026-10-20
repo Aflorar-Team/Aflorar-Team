@@ -601,5 +601,62 @@ app.put("/api/jardins/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/jardins/:id", async (req, res) => {
+  const { id } = req.params;
+  const { usuario_id } = req.body;
+
+  if (!usuario_id) {
+    return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  }
+
+  if (!supabase) {
+    const canteiros = getJardinsFallback(usuario_id);
+    const restantes = canteiros.filter((canteiro) => String(canteiro.id) !== String(id));
+    if (restantes.length === canteiros.length) {
+      return res.status(404).json({ erro: "Canteiro não encontrado." });
+    }
+    setJardinsFallback(usuario_id, restantes);
+    return res.json({ mensagem: "Canteiro excluído." });
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("jardins")
+      .delete()
+      .eq("id", id)
+      .eq("usuario_id", usuario_id)
+      .select("id")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return res.status(404).json({ erro: "Canteiro não encontrado." });
+
+    const restantes = getJardinsFallback(usuario_id)
+      .filter((canteiro) => String(canteiro.id) !== String(id));
+    setJardinsFallback(usuario_id, restantes);
+    return res.json({ mensagem: "Canteiro excluído." });
+  } catch (error) {
+    const mensagem = String(error?.message || "");
+    const tabelaAusente = mensagem.includes("jardins") && (
+      mensagem.includes("does not exist")
+      || mensagem.includes("Could not find the table")
+      || mensagem.includes("PGRST205")
+    );
+
+    console.error("Erro ao excluir canteiro:", error);
+    if (tabelaAusente) {
+      const canteiros = getJardinsFallback(usuario_id);
+      const restantes = canteiros.filter((canteiro) => String(canteiro.id) !== String(id));
+      if (restantes.length === canteiros.length) {
+        return res.status(404).json({ erro: "Canteiro não encontrado." });
+      }
+      setJardinsFallback(usuario_id, restantes);
+      return res.json({ mensagem: "Canteiro excluído do armazenamento temporário." });
+    }
+
+    return res.status(500).json({ erro: "Não foi possível excluir o canteiro." });
+  }
+});
+
 export { ensureJardinsTable };
 export default app;

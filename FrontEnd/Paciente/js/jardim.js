@@ -29,6 +29,7 @@
   const levelPicker = document.getElementById("level-picker");
   const modalError = document.getElementById("modal-error");
   const btnSave = document.getElementById("btn-save");
+  const btnDelete = document.getElementById("btn-delete");
   const btnCancel = document.getElementById("btn-cancel");
   const toastEl = document.getElementById("toast");
   const sideCard = document.getElementById("side-card");
@@ -208,15 +209,13 @@
     document.getElementById("evolution-close").focus();
   }
 
-  function abrirFormularioEvolucao(publica = false) {
+  function abrirFormularioEvolucao() {
     evolutionDetails.hidden = true;
     evolutionCompose.hidden = false;
     evolutionText.value = "";
-    evolutionShare.checked = publica;
+    evolutionShare.checked = false;
     evolutionCount.textContent = "0/600";
     evolutionFormError.textContent = "";
-    evolutionCompose.classList.toggle("is-public", publica);
-    document.getElementById("evolution-public").setAttribute("aria-pressed", String(publica));
     evolutionText.focus();
   }
 
@@ -230,7 +229,6 @@
   }
 
   document.getElementById("evolution-register").addEventListener("click", () => abrirFormularioEvolucao());
-  document.getElementById("evolution-public").addEventListener("click", () => abrirFormularioEvolucao(true));
   document.getElementById("evolution-back").addEventListener("click", () => {
     evolutionCompose.hidden = true;
     evolutionDetails.hidden = false;
@@ -251,7 +249,6 @@
   });
   evolutionShare.addEventListener("change", () => {
     evolutionCompose.classList.toggle("is-public", evolutionShare.checked);
-    document.getElementById("evolution-public").setAttribute("aria-pressed", String(evolutionShare.checked));
   });
   evolutionCompose.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -465,6 +462,21 @@
 
   }
 
+  async function excluirCanteiro(id) {
+    const response = await apiRequest(`/api/jardins/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario_id: usuarioId }),
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.erro || "Não foi possível excluir o canteiro.");
+    }
+
+    return payload;
+  }
+
   // ---------- modal ----------
   function openCreateModal(posicao) {
     editingId = null;
@@ -473,6 +485,7 @@
     inputNome.value = "";
     fieldNivel.style.display = "none";
     btnSave.textContent = "Criar";
+    btnDelete.hidden = true;
     modalError.classList.remove("show");
     modalBackdrop.dataset.posicao = posicao;
     modalBackdrop.classList.add("show");
@@ -487,6 +500,7 @@
     fieldNivel.style.display = "block";
     selectLevel(canteiro.nivel || 1);
     btnSave.textContent = "Salvar alterações";
+    btnDelete.hidden = false;
     modalError.classList.remove("show");
     modalBackdrop.classList.add("show");
     setTimeout(() => inputNome.focus(), 200);
@@ -571,6 +585,44 @@
     } finally {
       btnSave.disabled = false;
       btnSave.textContent = textoOriginal;
+    }
+  });
+
+  btnDelete.addEventListener("click", async () => {
+    const canteiro = canteiros.find((item) => String(item.id) === String(editingId));
+    if (!canteiro || !window.confirm(`Excluir o canteiro "${canteiro.nome}" e suas evoluções?`)) return;
+
+    btnDelete.disabled = true;
+    btnSave.disabled = true;
+    btnDelete.textContent = "Excluindo...";
+    const idExcluido = String(canteiro.id);
+
+    try {
+      let apenasLocal = false;
+      try {
+        await excluirCanteiro(canteiro.id);
+      } catch (error) {
+        console.warn("API indisponível; removendo o canteiro apenas do armazenamento local:", error);
+        apenasLocal = true;
+      }
+
+      canteiros = canteiros.filter((item) => String(item.id) !== idExcluido);
+      saveLocalGarden(canteiros);
+      const evolucoes = lerEvolucoes();
+      delete evolucoes[idExcluido];
+      localStorage.setItem(evolutionStorageKey, JSON.stringify(evolucoes));
+      voltarParaEvolucao = false;
+      renderGrid();
+      closeModal();
+      showToast(apenasLocal ? "Canteiro removido deste navegador. O servidor não estava disponível." : "Canteiro excluído!", apenasLocal ? "error" : "success");
+    } catch (error) {
+      console.error("Não foi possível concluir a exclusão do canteiro:", error);
+      modalError.textContent = "O canteiro foi removido, mas não foi possível atualizar os dados locais.";
+      modalError.classList.add("show");
+    } finally {
+      btnDelete.disabled = false;
+      btnSave.disabled = false;
+      btnDelete.textContent = "Excluir";
     }
   });
 

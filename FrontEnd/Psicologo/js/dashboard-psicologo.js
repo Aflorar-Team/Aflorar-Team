@@ -14,6 +14,7 @@ if (!usuario || tipo !== "psicologo") {
 const idPsicologo = usuario?.id || usuario?.email || "local";
 const chaveAgenda = `aflorar.agenda.${idPsicologo}`;
 const chavePacientes = `aflorar.pacientes-vinculados.${idPsicologo}`;
+const chaveAlertas = `aflorar.alertas.${idPsicologo}`;
 const modal = document.getElementById("popupModal");
 const popupTitulo = document.getElementById("popupTitulo");
 const popupConteudo = document.getElementById("popupConteudo");
@@ -46,6 +47,99 @@ function dataLocal(data) {
   const mes = String(data.getMonth() + 1).padStart(2, "0");
   const dia = String(data.getDate()).padStart(2, "0");
   return `${ano}-${mes}-${dia}`;
+}
+
+function lerAlertas() {
+  return lerLista(chaveAlertas);
+}
+
+function salvarAlertas(alertas) {
+  localStorage.setItem(chaveAlertas, JSON.stringify(alertas));
+}
+
+function renderizarAlertas(paciente) {
+  const chavePaciente = paciente.toLocaleLowerCase("pt-BR");
+  const alertas = lerAlertas().filter((alerta) => alerta.paciente === chavePaciente);
+  const formulario = document.createElement("form");
+  formulario.className = "form-alerta-paciente";
+  formulario.innerHTML = `
+    <label for="tituloAlerta">Novo lembrete</label>
+    <input id="tituloAlerta" name="titulo" type="text" maxlength="100" required placeholder="Ex.: Retomar exercício de respiração">
+    <div class="campos-alerta">
+      <label>Prioridade
+        <select name="prioridade">
+          <option value="normal">Normal</option>
+          <option value="atencao">Atenção</option>
+          <option value="urgente">Urgente</option>
+        </select>
+      </label>
+      <label>Data
+        <input name="data" type="date">
+      </label>
+    </div>
+    <button class="botao-vincular" type="submit">Adicionar lembrete</button>
+    <p class="status-vinculo" role="status"></p>
+  `;
+
+  const secao = criarElemento("section", "popup-secao");
+  secao.appendChild(criarElemento("h5", "", `Lembretes de ${paciente}`));
+  const lista = criarElemento("ul", "lista-alertas-paciente");
+
+  function atualizarLista() {
+    const itens = lerAlertas().filter((alerta) => alerta.paciente === chavePaciente);
+    lista.replaceChildren();
+    if (!itens.length) {
+      lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum lembrete cadastrado para este paciente."));
+      return;
+    }
+
+    itens.sort((a, b) => (a.data || "9999-12-31").localeCompare(b.data || "9999-12-31"));
+    itens.forEach((alerta) => {
+      const item = criarElemento("li", `item-alerta prioridade-${alerta.prioridade}`);
+      const conteudo = criarElemento("div", "item-alerta-conteudo");
+      conteudo.appendChild(criarElemento("strong", "", alerta.titulo));
+      const prioridade = alerta.prioridade === "urgente" ? "Urgente" : alerta.prioridade === "atencao" ? "Atenção" : "Normal";
+      const data = alerta.data ? new Date(`${alerta.data}T12:00:00`).toLocaleDateString("pt-BR") : "Sem data";
+      conteudo.appendChild(criarElemento("span", "", `${prioridade} · ${data}`));
+
+      const remover = criarElemento("button", "botao-remover-alerta", "Remover");
+      remover.type = "button";
+      remover.setAttribute("aria-label", `Remover lembrete: ${alerta.titulo}`);
+      remover.addEventListener("click", () => {
+        salvarAlertas(lerAlertas().filter((itemSalvo) => itemSalvo.id !== alerta.id));
+        atualizarLista();
+      });
+      item.append(conteudo, remover);
+      lista.appendChild(item);
+    });
+  }
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+    const dados = new FormData(formulario);
+    const novoAlerta = {
+      id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+      paciente: chavePaciente,
+      titulo: String(dados.get("titulo")).trim(),
+      prioridade: String(dados.get("prioridade")),
+      data: String(dados.get("data") || ""),
+      criadoEm: new Date().toISOString(),
+    };
+    const status = formulario.querySelector(".status-vinculo");
+    try {
+      salvarAlertas([...lerAlertas(), novoAlerta]);
+      formulario.reset();
+      status.textContent = "Lembrete salvo neste navegador.";
+      atualizarLista();
+    } catch {
+      status.textContent = "Não foi possível salvar. Verifique o espaço disponível no navegador.";
+    }
+  });
+
+  const aviso = criarElemento("p", "aviso-integracao", "Estes lembretes ficam salvos apenas neste navegador e não são enviados ao paciente nem sincronizados com o prontuário.");
+  popupConteudo.replaceChildren(aviso, formulario, secao);
+  secao.appendChild(lista);
+  atualizarLista();
 }
 
 function renderizarDemandas() {
@@ -213,6 +307,19 @@ function fecharPopup() {
 
 document.querySelectorAll(".btn-acao").forEach((botao) => {
   botao.addEventListener("click", () => abrirPopup(botao.dataset.popup));
+});
+
+document.querySelectorAll('.acoes-paciente button[title="Alertas"]').forEach((botao) => {
+  botao.addEventListener("click", () => {
+    const paciente = botao.closest(".card-paciente")?.querySelector(".tag-nome")?.textContent.trim();
+    if (!paciente) return;
+    ultimoAcionador = botao;
+    popupTitulo.textContent = `Alertas · ${paciente}`;
+    renderizarAlertas(paciente);
+    modal.setAttribute("aria-hidden", "false");
+    modal.classList.add("active");
+    modalClose?.focus();
+  });
 });
 
 popupConteudo.addEventListener("click", (evento) => {

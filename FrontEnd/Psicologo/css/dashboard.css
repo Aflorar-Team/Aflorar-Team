@@ -391,6 +391,89 @@
     font-weight: 400;
   }
 
+  .form-alerta-paciente {
+    display: grid;
+    gap: 10px;
+  }
+
+  .form-alerta-paciente>label,
+  .campos-alerta label {
+    display: grid;
+    gap: 6px;
+    color: #333;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .form-alerta-paciente input,
+  .form-alerta-paciente select {
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid #d8d2cc;
+    border-radius: 6px;
+    background: #fff;
+    color: #333;
+    font: inherit;
+  }
+
+  .campos-alerta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .lista-alertas-paciente {
+    list-style: none;
+    border-top: 1px solid #eee7e1;
+  }
+
+  .item-alerta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 4px;
+    border-bottom: 1px solid #eee7e1;
+    border-left: 3px solid #7A9C59;
+  }
+
+  .item-alerta.prioridade-atencao {
+    border-left-color: #F4A261;
+  }
+
+  .item-alerta.prioridade-urgente {
+    border-left-color: #c75860;
+  }
+
+  .item-alerta-conteudo {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .item-alerta-conteudo strong {
+    color: #333;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  .item-alerta-conteudo span {
+    color: #777;
+    font-size: 12px;
+  }
+
+  .botao-remover-alerta {
+    flex: 0 0 auto;
+    padding: 6px 9px;
+    border: 1px solid #e5c4c4;
+    border-radius: 5px;
+    background: #fff;
+    color: #a33f48;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+
   .btn-demanda {
     background: #7A9C59;
   }
