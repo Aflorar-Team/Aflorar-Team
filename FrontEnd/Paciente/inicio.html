@@ -51,9 +51,18 @@
           <h3>Humor atual</h3>
         </div>
 
-        <div class="card green">Em breve</div>
-        <div class="card green large">Em breve</div>
-        <div class="card lightpink">Em breve</div>
+        <a class="card green card-link" href="./diario.html">
+          <h3>Escrever no diário</h3>
+          <p>Registre pensamentos e emoções.</p>
+        </a>
+        <button class="card green large card-action" id="btnRespiracao" type="button">
+          <h3>Pausa para respirar</h3>
+          <p>Faça uma prática guiada de 42 segundos.</p>
+        </button>
+        <a class="card lightpink card-link" href="./quiz.html">
+          <h3>O que estou sentindo?</h3>
+          <p>Explore suas emoções com o quiz.</p>
+        </a>
 
       </div>
 
@@ -191,6 +200,19 @@
       </div>
 
     </div>
+
+    <dialog class="breathing-dialog" id="respiracaoDialog" aria-labelledby="respiracaoTitulo">
+      <button class="breathing-close" id="fecharRespiracao" type="button" aria-label="Fechar exercício">×</button>
+      <p class="breathing-eyebrow">PAUSA CONSCIENTE</p>
+      <h2 id="respiracaoTitulo">Respire no seu ritmo</h2>
+      <p class="breathing-description">Acompanhe o círculo. Se algo ficar desconfortável, pare e volte à sua respiração
+        natural.</p>
+      <div class="breathing-orbit" id="circuloRespiracao" aria-hidden="true"><span></span></div>
+      <p class="breathing-phase" id="faseRespiracao" aria-live="polite">Quando estiver pronto, comece.</p>
+      <p class="breathing-count" id="contagemRespiracao" aria-live="off">3 ciclos</p>
+      <button class="breathing-start" id="iniciarRespiracao" type="button">Começar</button>
+    </dialog>
+
     <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
     <script src="./js/inicio.js" defer></script>
 </body>

@@ -234,3 +234,74 @@ card.addEventListener("click", trocarFrase);
 
 // Clique no botão
 botao.addEventListener("click", trocarFrase);
+
+const dialogoRespiracao = document.getElementById("respiracaoDialog");
+const botaoIniciarRespiracao = document.getElementById("iniciarRespiracao");
+const textoFaseRespiracao = document.getElementById("faseRespiracao");
+const textoContagemRespiracao = document.getElementById("contagemRespiracao");
+const circuloRespiracao = document.getElementById("circuloRespiracao");
+let intervaloRespiracao = null;
+
+function pararRespiracao() {
+  clearInterval(intervaloRespiracao);
+  intervaloRespiracao = null;
+  circuloRespiracao.dataset.fase = "";
+  botaoIniciarRespiracao.disabled = false;
+  botaoIniciarRespiracao.textContent = "Recomeçar";
+}
+
+function iniciarRespiracao() {
+  const fases = [
+    { nome: "Inspire", duracao: 4 },
+    { nome: "Segure", duracao: 4 },
+    { nome: "Expire", duracao: 6 },
+  ];
+  let faseAtual = 0;
+  let ciclosRestantes = 3;
+  let segundosRestantes = fases[faseAtual].duracao;
+
+  botaoIniciarRespiracao.disabled = true;
+  botaoIniciarRespiracao.textContent = "Em andamento";
+
+  function atualizar() {
+    textoFaseRespiracao.textContent = `${fases[faseAtual].nome}... ${segundosRestantes}`;
+    textoContagemRespiracao.textContent = `${ciclosRestantes} ${ciclosRestantes === 1 ? "ciclo restante" : "ciclos restantes"}`;
+    circuloRespiracao.dataset.fase = fases[faseAtual].nome.toLowerCase();
+  }
+
+  atualizar();
+  intervaloRespiracao = setInterval(() => {
+    segundosRestantes -= 1;
+
+    if (segundosRestantes === 0) {
+      faseAtual += 1;
+      if (faseAtual === fases.length) {
+        faseAtual = 0;
+        ciclosRestantes -= 1;
+      }
+
+      if (ciclosRestantes === 0) {
+        clearInterval(intervaloRespiracao);
+        intervaloRespiracao = null;
+        circuloRespiracao.dataset.fase = "concluido";
+        textoFaseRespiracao.textContent = "Prática concluída. Volte ao seu ritmo.";
+        textoContagemRespiracao.textContent = "";
+        botaoIniciarRespiracao.disabled = false;
+        botaoIniciarRespiracao.textContent = "Fazer novamente";
+        return;
+      }
+      segundosRestantes = fases[faseAtual].duracao;
+    }
+
+    atualizar();
+  }, 1000);
+}
+
+document.getElementById("btnRespiracao").addEventListener("click", () => {
+  dialogoRespiracao.showModal();
+  document.getElementById("iniciarRespiracao").focus();
+});
+
+botaoIniciarRespiracao.addEventListener("click", iniciarRespiracao);
+document.getElementById("fecharRespiracao").addEventListener("click", () => dialogoRespiracao.close());
+dialogoRespiracao.addEventListener("close", pararRespiracao);
