@@ -85,9 +85,11 @@ form.addEventListener("submit", async (e) => {
     }
 
     mensagemErro.style.display = "none";
-    mensagemSucesso.textContent = data.contaExistente
-      ? "Perfil de psicólogo adicionado à sua conta. Faça login para continuar."
-      : "Conta criada! Verifique seu e-mail para confirmar.";
+    mensagemSucesso.textContent = data.statusPerfil === "pendente"
+      ? data.contaExistente
+        ? "Cadastro profissional adicionado. O acesso será liberado após a verificação do CRP."
+        : "Conta criada! Verifique seu e-mail. O acesso profissional será liberado após a verificação do CRP."
+      : "Perfil atualizado. Faça login para continuar.";
     mensagemSucesso.style.display = "block";
 
     setTimeout(() => {

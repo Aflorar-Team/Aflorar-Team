@@ -11,6 +11,12 @@ body {
   overflow: hidden;
 }
 
+body.oauth-page {
+  height: auto;
+  min-height: 100vh;
+  overflow: auto;
+}
+
 /* HEADER */
 header {
   display: flex;
@@ -75,6 +81,12 @@ main {
   z-index: 2;
 }
 
+body.oauth-page main {
+  height: auto;
+  min-height: 100vh;
+  padding: 24px 0;
+}
+
 .login-card {
   width: 350px;
   height: 550px;
@@ -88,6 +100,28 @@ main {
 .login-card h2 {
   margin-bottom: 20px;
   color: #333;
+}
+
+.oauth-profile-card {
+  width: min(100% - 32px, 460px);
+  height: auto;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.oauth-profile-card #formPerfilGoogle {
+  margin-top: 16px;
+}
+
+.oauth-profile-card #salvarPerfilGoogle {
+  margin-top: 18px;
+  border: 0;
+  cursor: pointer;
+}
+
+.oauth-profile-card #salvarPerfilGoogle:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 label {

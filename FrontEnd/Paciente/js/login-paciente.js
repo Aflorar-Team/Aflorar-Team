@@ -2,6 +2,8 @@ const form = document.getElementById("formLogin");
 const mensagemErro = document.getElementById("mensagemErro");
 const limitarSenha = (valor = "") => valor.slice(0, 20);
 
+window.AflorarAuth.restaurarSessao("paciente");
+
 document.getElementById("password")?.addEventListener("input", (event) => {
   event.target.value = limitarSenha(event.target.value);
 });
@@ -36,9 +38,7 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("usuario", JSON.stringify(data.usuario));
-    localStorage.setItem("tipo", "paciente");
+    window.AflorarAuth.salvarSessao(data, "paciente");
 
     window.location.href = "./inicio.html";
 

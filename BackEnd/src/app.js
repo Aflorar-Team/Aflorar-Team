@@ -116,8 +116,9 @@ const setJardinsFallback = (usuarioId, canteiros) => {
   jardinsFallback.set(String(usuarioId), canteiros.map((canteiro) => ({ ...canteiro, id: String(canteiro.id) })));
 };
 
-const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
-const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "").slice(0, 11);
+const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "");
+const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "");
+const normalizarCrp = (valor = "") => String(valor).replace(/\D/g, "");
 
 const criarClienteAuth = () => createClient(
   SUPABASE_URL,
@@ -127,10 +128,15 @@ const criarClienteAuth = () => createClient(
   },
 );
 
+const criarClienteAdmin = () => SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  : null;
+
 const usuarioTemPerfil = (usuario, perfil) => {
-  const metadados = usuario?.user_metadata || {};
-  const perfis = Array.isArray(metadados.tipos) ? metadados.tipos : [metadados.tipo];
-  return perfis.includes(perfil);
+  const papeis = usuario?.app_metadata?.roles;
+  return Array.isArray(papeis) && papeis.includes(perfil);
 };
 
 const usuarioComPerfil = (usuario, perfil) => {
@@ -141,6 +147,73 @@ const usuarioComPerfil = (usuario, perfil) => {
     user_metadata: { ...metadados, ...dadosPerfil, tipo: perfil },
   };
 };
+
+async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
+  const admin = criarClienteAdmin();
+  if (!admin) {
+    return { erro: "SUPABASE_SERVICE_ROLE_KEY não configurada no backend.", status: 500 };
+  }
+
+  const { data: usuarioAtual, error: erroBusca } = await admin.auth.admin.getUserById(usuarioId);
+  if (erroBusca || !usuarioAtual?.user) {
+    return { erro: "Não foi possível localizar a conta autenticada.", status: 500 };
+  }
+
+  const usuario = usuarioAtual.user;
+  const metadadosAtuais = usuario.user_metadata || {};
+  const perfisAtuais = { ...(metadadosAtuais.perfis || {}) };
+  const rolesAtuais = new Set(Array.isArray(usuario.app_metadata?.roles)
+    ? usuario.app_metadata.roles.filter((role) => ["paciente", "psicologo"].includes(role))
+    : []);
+  const perfisAtualizados = { ...perfisAtuais, [perfil]: dadosPerfil };
+  const userMetadata = {
+    ...metadadosAtuais,
+    nome: dadosPerfil.nome,
+    cpf: dadosPerfil.cpf,
+    telefone: dadosPerfil.telefone,
+    perfis: perfisAtualizados,
+  };
+  const appMetadata = { ...(usuario.app_metadata || {}), roles: [...rolesAtuais] };
+
+  const { error: erroUsuario } = await admin.from("usuarios").upsert({
+    id: usuarioId,
+    nome: dadosPerfil.nome,
+    email: usuario.email,
+  }, { onConflict: "id" });
+  if (erroUsuario) return { erro: "Não foi possível salvar os dados da conta.", status: 500 };
+
+  const tabelaPerfil = perfil === "paciente" ? "pacientes" : "psicologos";
+  const { error: erroPerfil } = await admin.from(tabelaPerfil).upsert({
+    usuario_id: usuarioId,
+    cpf: dadosPerfil.cpf,
+    telefone: dadosPerfil.telefone,
+    ...(perfil === "psicologo" ? { crp: dadosPerfil.crp } : {}),
+  }, { onConflict: "usuario_id" });
+  if (erroPerfil) {
+    console.error(`Erro ao salvar perfil na tabela ${tabelaPerfil}:`, erroPerfil);
+    return { erro: "Não foi possível salvar os dados do perfil. Verifique o schema do Supabase.", status: 500 };
+  }
+
+  if (perfil === "paciente") {
+    rolesAtuais.add("paciente");
+    appMetadata.roles = [...rolesAtuais];
+  } else if (rolesAtuais.has("psicologo")) {
+    appMetadata.psicologo_status = "aprovado";
+  } else {
+    appMetadata.psicologo_status = "pendente";
+  }
+
+  const { data, error } = await admin.auth.admin.updateUserById(usuarioId, {
+    user_metadata: userMetadata,
+    app_metadata: appMetadata,
+  });
+
+  if (error) return { erro: "Não foi possível salvar o perfil.", status: 500 };
+  return {
+    usuario: data.user,
+    statusPerfil: perfil === "psicologo" && !rolesAtuais.has("psicologo") ? "pendente" : "ativo",
+  };
+}
 
 async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -154,29 +227,14 @@ async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
   });
 
   if (!erroLogin && login.user) {
-    const metadadosAtuais = login.user.user_metadata || {};
-    const perfisAtuais = Array.isArray(metadadosAtuais.tipos)
-      ? metadadosAtuais.tipos
-      : [metadadosAtuais.tipo].filter(Boolean);
-    const perfisSalvos = { ...(metadadosAtuais.perfis || {}) };
-    if (metadadosAtuais.tipo && !perfisSalvos[metadadosAtuais.tipo]) {
-      perfisSalvos[metadadosAtuais.tipo] = Object.fromEntries(
-        Object.entries(metadadosAtuais).filter(([chave]) => !["tipo", "tipos", "perfis"].includes(chave)),
-      );
-    }
-    const novosMetadados = {
-      ...metadadosAtuais,
-      tipo: metadadosAtuais.tipo || perfil,
-      tipos: [...new Set([...perfisAtuais, perfil])],
-      perfis: {
-        ...perfisSalvos,
-        [perfil]: dadosPerfil,
-      },
-    };
-    const { data, error } = await clienteAuth.auth.updateUser({ data: novosMetadados });
-
-    if (error) return { erro: error.message, status: 400 };
-    return { usuario: data.user, contaExistente: true };
+    const resultadoPerfil = await salvarPerfilConta({
+      usuarioId: login.user.id,
+      perfil,
+      dadosPerfil,
+    });
+    return resultadoPerfil.erro
+      ? resultadoPerfil
+      : { ...resultadoPerfil, contaExistente: true };
   }
 
   if (erroLogin?.message?.toLowerCase().includes("email not confirmed")) {
@@ -190,12 +248,7 @@ async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
     email,
     password: senha,
     options: {
-      data: {
-        ...dadosPerfil,
-        tipo: perfil,
-        tipos: [perfil],
-        perfis: { [perfil]: dadosPerfil },
-      },
+      data: dadosPerfil,
     },
   });
 
@@ -215,7 +268,16 @@ async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
     };
   }
 
-  return { usuario: data.user, contaExistente: false };
+  if (!data.user) return { erro: "Não foi possível criar a conta.", status: 500 };
+
+  const resultadoPerfil = await salvarPerfilConta({
+    usuarioId: data.user.id,
+    perfil,
+    dadosPerfil,
+  });
+  return resultadoPerfil.erro
+    ? resultadoPerfil
+    : { ...resultadoPerfil, contaExistente: false };
 }
 
 app.use(express.static(path.resolve(__dirname, "../../FrontEnd")));
@@ -246,6 +308,64 @@ app.use(cors({
   }
 }));
 app.use(express.json());
+
+app.get("/api/auth-config", (req, res) => {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return res.status(500).json({ erro: "Configuração pública do Supabase ausente." });
+  }
+
+  return res.json({ url: SUPABASE_URL, anonKey: SUPABASE_KEY });
+});
+app.post("/api/oauth/complete-profile", async (req, res) => {
+  const { tipo, nome, cpf, telefone, crp } = req.body;
+  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+
+  if (!token) return res.status(401).json({ erro: "Sessão não autenticada." });
+  if (!["paciente", "psicologo"].includes(tipo)) {
+    return res.status(400).json({ erro: "Tipo de perfil inválido." });
+  }
+
+  const dadosPerfil = {
+    nome: String(nome || "").trim(),
+    cpf: normalizarCpf(cpf),
+    telefone: normalizarTelefone(telefone),
+  };
+  if (tipo === "psicologo") dadosPerfil.crp = normalizarCrp(crp);
+
+  if (!dadosPerfil.nome || dadosPerfil.cpf.length !== 11
+    || dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
+    return res.status(400).json({ erro: "Nome, CPF ou telefone inválido." });
+  }
+  if (tipo === "psicologo" && (dadosPerfil.crp.length < 4 || dadosPerfil.crp.length > 8)) {
+    return res.status(400).json({ erro: "CRP inválido." });
+  }
+
+  try {
+    const clienteAuth = criarClienteAuth();
+    const { data: autenticacao, error: erroAuth } = await clienteAuth.auth.getUser(token);
+    if (erroAuth || !autenticacao.user) {
+      return res.status(401).json({ erro: "Sessão inválida ou expirada." });
+    }
+
+    const resultado = await salvarPerfilConta({
+      usuarioId: autenticacao.user.id,
+      perfil: tipo,
+      dadosPerfil,
+    });
+    if (resultado.erro) return res.status(resultado.status).json({ erro: resultado.erro });
+
+    return res.json({
+      mensagem: tipo === "psicologo" && resultado.statusPerfil === "pendente"
+        ? "Cadastro recebido e aguardando verificação profissional."
+        : "Perfil salvo com sucesso!",
+      usuario: resultado.usuario,
+      statusPerfil: resultado.statusPerfil,
+    });
+  } catch (error) {
+    console.error("Erro ao concluir perfil OAuth:", error);
+    return res.status(500).json({ erro: "Erro ao salvar o perfil." });
+  }
+});
 
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
@@ -352,7 +472,8 @@ app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const clienteAuth = criarClienteAuth();
+    const { data, error } = await clienteAuth.auth.signInWithPassword({
       email,
       password: senha,
     });
@@ -366,10 +487,48 @@ app.post(["/api/login", "/api/login-paciente"], async (req, res) => {
       mensagem: "Login realizado com sucesso!",
       usuario: usuarioComPerfil(data.user, "paciente"),
       token: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresAt: data.session.expires_at,
     });
   } catch (error) {
     console.error("Erro no login do paciente:", error);
     return res.status(500).json({ erro: "Erro de conexão com o Supabase." });
+  }
+});
+
+app.post("/api/refresh-session", async (req, res) => {
+  const { refreshToken, tipo } = req.body;
+  if (!refreshToken || !["paciente", "psicologo"].includes(tipo)) {
+    return res.status(400).json({ erro: "Dados de sessão inválidos." });
+  }
+
+  if (!SUPABASE_URL || !(SUPABASE_KEY || SUPABASE_SERVICE_ROLE_KEY)) {
+    return res.status(500).json({ erro: "Configuração do Supabase ausente." });
+  }
+
+  try {
+    const clienteAuth = criarClienteAuth();
+    const { data, error } = await clienteAuth.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data.session || !data.user) {
+      return res.status(401).json({ erro: "Sessão expirada. Faça login novamente." });
+    }
+
+    if (!usuarioTemPerfil(data.user, tipo)) {
+      return res.status(403).json({ erro: "Acesso negado para este tipo de conta." });
+    }
+
+    return res.json({
+      usuario: usuarioComPerfil(data.user, tipo),
+      token: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresAt: data.session.expires_at,
+    });
+  } catch (error) {
+    console.error("Erro ao renovar sessão:", error);
+    return res.status(500).json({ erro: "Erro ao renovar a sessão." });
   }
 });
 
@@ -378,19 +537,41 @@ app.post("/api/cadastro-psicologo", async (req, res) => {
   if (!nome || !cpf || !crp || !email || !telefone || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
 
-  const resultado = await cadastrarPerfil({
-    email,
-    senha,
-    perfil: "psicologo",
-    dadosPerfil: { nome, cpf, crp, telefone },
-  });
+  const dadosPerfil = {
+    nome: String(nome).trim(),
+    cpf: normalizarCpf(cpf),
+    crp: normalizarCrp(crp),
+    telefone: normalizarTelefone(telefone),
+  };
+  if (dadosPerfil.cpf.length !== 11) return res.status(400).json({ erro: "CPF inválido." });
+  if (dadosPerfil.crp.length < 4 || dadosPerfil.crp.length > 8) {
+    return res.status(400).json({ erro: "CRP inválido." });
+  }
+  if (dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
+    return res.status(400).json({ erro: "Telefone inválido." });
+  }
 
-  if (resultado.erro) return res.status(resultado.status).json({ erro: resultado.erro });
-  res.json({
-    mensagem: "Cadastro realizado com sucesso!",
-    usuario: resultado.usuario,
-    contaExistente: resultado.contaExistente,
-  });
+  try {
+    const resultado = await cadastrarPerfil({
+      email,
+      senha,
+      perfil: "psicologo",
+      dadosPerfil,
+    });
+
+    if (resultado.erro) return res.status(resultado.status).json({ erro: resultado.erro });
+    return res.json({
+      mensagem: resultado.statusPerfil === "pendente"
+        ? "Cadastro recebido. O acesso profissional será liberado após a verificação do CRP."
+        : "Perfil de psicólogo atualizado.",
+      usuario: resultado.usuario,
+      contaExistente: resultado.contaExistente,
+      statusPerfil: resultado.statusPerfil,
+    });
+  } catch (error) {
+    console.error("Erro no cadastro do psicólogo:", error);
+    return res.status(500).json({ erro: "Erro ao salvar o cadastro do psicólogo." });
+  }
 });
 
 app.post("/api/login-psicologo", async (req, res) => {
@@ -398,12 +579,23 @@ app.post("/api/login-psicologo", async (req, res) => {
   if (!email || !senha)
     return res.status(400).json({ erro: "Preencha e-mail e senha." });
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password: senha,
-  });
+  if (!supabase) return res.status(500).json({ erro: "Configuração do Supabase ausente." });
+
+  let data;
+  let error;
+  try {
+    const clienteAuth = criarClienteAuth();
+    ({ data, error } = await clienteAuth.auth.signInWithPassword({ email, password: senha }));
+  } catch (loginError) {
+    console.error("Erro no login do psicólogo:", loginError);
+    return res.status(500).json({ erro: "Erro de conexão com o Supabase." });
+  }
 
   if (error) return res.status(400).json({ erro: "E-mail ou senha inválidos." });
+
+  if (data.user?.app_metadata?.psicologo_status === "pendente") {
+    return res.status(403).json({ erro: "Seu cadastro profissional aguarda a verificação do CRP." });
+  }
 
   if (!usuarioTemPerfil(data.user, "psicologo")) {
     return res.status(403).json({ erro: "Acesso negado. Use o login de paciente." });
@@ -413,6 +605,8 @@ app.post("/api/login-psicologo", async (req, res) => {
     mensagem: "Login realizado com sucesso!",
     usuario: usuarioComPerfil(data.user, "psicologo"),
     token: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    expiresAt: data.session.expires_at,
   });
 });
 

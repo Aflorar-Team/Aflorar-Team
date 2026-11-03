@@ -131,8 +131,11 @@ Crie o arquivo `BackEnd/.env`:
 GEMINI_API_KEY=sua_chave_do_gemini
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_KEY=sua_chave_anonima_do_supabase
+SUPABASE_SERVICE_ROLE_KEY=sua_chave_de_servico_do_supabase
 PORT=3000
 ```
+
+`SUPABASE_SERVICE_ROLE_KEY` é usada apenas pelo backend para salvar papéis e perfis. Configure-a como variável secreta no Render; nunca a inclua no frontend ou em repositório público.
 
 **4. Rode o servidor**
 ```bash
@@ -152,7 +155,14 @@ Abra `http://localhost:3000` no navegador.
 | `GEMINI_API_KEY` | Chave da API do Google Gemini |
 | `SUPABASE_URL` | URL do projeto no Supabase |
 | `SUPABASE_KEY` | Chave anônima pública do Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave administrativa privada, exclusiva do backend |
 | `PORT` | Porta do servidor (padrão: 3000) |
+
+### Papéis de conta e aprovação profissional
+
+Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql` no SQL Editor do Supabase. Novos pacientes recebem o papel pelo backend; novos psicólogos permanecem pendentes até a verificação do CRP. A aprovação deve ser feita por um administrador no `app_metadata` do usuário, adicionando `psicologo` a `roles` e definindo `psicologo_status` como `aprovado`.
+
+Contas criadas antes desta mudança precisam de migração administrativa explícita: atribua `paciente` ou `psicologo` em `app_metadata.roles` somente após conferir a identidade e o perfil. Não copie automaticamente os papéis antigos de `user_metadata`, pois esse campo pode ser editado pelo próprio usuário.
 
 ---
 

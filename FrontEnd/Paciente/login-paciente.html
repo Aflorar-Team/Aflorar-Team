@@ -41,7 +41,8 @@
 
         <label>Senha</label>
         <div class="input-group">
-          <input type="password" id="password" placeholder="Sua senha" minlength="6" maxlength="20" autocomplete="current-password">
+          <input type="password" id="password" placeholder="Sua senha" minlength="6" maxlength="20"
+            autocomplete="current-password">
           <button type="button" id="togglePassword"></button>
         </div>
 
@@ -55,7 +56,7 @@
 
         <div class="divider">ou</div>
 
-        <button type="button" class="btn-google">
+        <button type="button" class="btn-google" data-google-auth="paciente">
           <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" />
           Entrar com o Google
         </button>
@@ -71,6 +72,8 @@
     © 2025 Aflorar. Todos os direitos reservados.
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/js/auth-session.js"></script>
   <script src="./js/login-paciente.js"></script>
 </body>
 

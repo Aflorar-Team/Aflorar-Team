@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conectando conta - Aflorar</title>
+  <link rel="stylesheet" href="./shared/css/login.css">
+  <link rel="stylesheet" href="./shared/css/global.css">
+</head>
+
+<body class="oauth-page">
+  <main class="auth-page">
+    <div class="login-card oauth-profile-card">
+      <h2>Conectando sua conta</h2>
+      <p id="oauthStatus" role="status">Aguarde enquanto confirmamos seu acesso pelo Google.</p>
+      <p id="oauthError" role="alert" style="color:red; display:none;"></p>
+      <a id="oauthPending" class="btn-primary" href="./Psicologo/login-psicologo.html" hidden>Voltar ao login</a>
+      <a id="oauthBack" class="btn-primary" href="./escolha-tipo-conta.html" hidden>Voltar ao Aflorar</a>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./shared/js/auth-session.js"></script>
+  <script src="./shared/js/oauth-callback.js"></script>
+</body>
+
+</html>

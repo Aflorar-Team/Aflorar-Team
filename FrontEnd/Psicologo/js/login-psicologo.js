@@ -2,6 +2,8 @@ const form = document.getElementById("formLoginPsicologo");
 const mensagemErro = document.getElementById("mensagemErro");
 const limitarSenha = (valor = "") => valor.slice(0, 20);
 
+window.AflorarAuth.restaurarSessao("psicologo");
+
 document.getElementById("password")?.addEventListener("input", (event) => {
   event.target.value = limitarSenha(event.target.value);
 });
@@ -28,7 +30,7 @@ form.addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, senha }),
     });
-    
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -36,9 +38,7 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("usuario", JSON.stringify(data.usuario));
-    localStorage.setItem("tipo", "psicologo");
+    window.AflorarAuth.salvarSessao(data, "psicologo");
 
     window.location.href = "./dashboard-psicologo.html";
 

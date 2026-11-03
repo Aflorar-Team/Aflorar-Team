@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete seu perfil - Aflorar</title>
+  <link rel="stylesheet" href="./shared/css/login.css">
+  <link rel="stylesheet" href="./shared/css/global.css">
+</head>
+
+<body class="oauth-page">
+  <div class="background" aria-hidden="true">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+  </div>
+
+  <main class="auth-page">
+    <section class="login-card oauth-profile-card">
+      <h2 id="tituloPerfil">Complete seu perfil</h2>
+      <p id="descricaoPerfil">Precisamos de alguns dados para concluir seu cadastro.</p>
+
+      <form id="formPerfilGoogle">
+        <label for="nomeGoogle">Nome completo</label>
+        <div class="input-group">
+          <input type="text" id="nomeGoogle" autocomplete="name" required>
+        </div>
+
+        <label for="emailGoogle">E-mail da conta Google</label>
+        <div class="input-group">
+          <input type="email" id="emailGoogle" readonly>
+        </div>
+
+        <label for="cpfGoogle">CPF</label>
+        <div class="input-group">
+          <input type="text" id="cpfGoogle" placeholder="000.000.000-00" maxlength="14" inputmode="numeric" required>
+        </div>
+
+        <label for="telefoneGoogle">Telefone</label>
+        <div class="input-group">
+          <input type="tel" id="telefoneGoogle" placeholder="(00) 00000-0000" maxlength="15" inputmode="numeric"
+            required>
+        </div>
+
+        <div id="campoCrpGoogle" hidden>
+          <label for="crpGoogle">CRP</label>
+          <div class="input-group">
+            <input type="text" id="crpGoogle" placeholder="Ex: 06/123456" maxlength="10" inputmode="numeric">
+          </div>
+        </div>
+
+        <p id="erroPerfilGoogle" role="alert" style="color:red; display:none;"></p>
+  <p id="sucessoPerfilGoogle" role="status" style="color:green; display:none;"></p>
+        <button type="submit" class="btn-primary" id="salvarPerfilGoogle">Concluir cadastro</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./shared/js/auth-session.js"></script>
+  <script src="./shared/js/oauth-completar-perfil.js"></script>
+</body>
+
+</html>

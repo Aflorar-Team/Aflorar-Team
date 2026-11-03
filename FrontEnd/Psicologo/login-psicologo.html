@@ -40,7 +40,8 @@
 
         <label>Senha</label>
         <div class="input-group">
-          <input type="password" id="password" placeholder="Sua senha" minlength="6" maxlength="20" autocomplete="current-password">
+          <input type="password" id="password" placeholder="Sua senha" minlength="6" maxlength="20"
+            autocomplete="current-password">
           <button type="button" id="togglePassword"></button>
         </div>
 
@@ -49,6 +50,13 @@
         <button type="submit" class="btn-primary">Entrar</button>
 
         <p id="mensagemErro" style="color:red; display:none;"></p>
+
+        <div class="divider">ou</div>
+
+        <button type="button" class="btn-google" data-google-auth="psicologo">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="">
+          Entrar com o Google
+        </button>
 
         <p class="register">
           Ainda não tem uma conta? <a href="./cadastro-psicologo.html">Registre-se</a>
@@ -61,6 +69,8 @@
     © 2025 Aflorar. Todos os direitos reservados.
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/js/auth-session.js"></script>
   <script src="./js/login-psicologo.js"></script>
 </body>
 
