@@ -221,6 +221,12 @@ async function cadastrarPerfil({ email, senha, perfil, dadosPerfil }) {
 app.use(express.static(path.resolve(__dirname, "../../FrontEnd")));
 const origensPermitidas = [
   "https://aflorar-team.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:5500",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3001",
+  "http://127.0.0.1:5500",
   /https:\/\/aflorar-team-.*\.vercel\.app/  // aceita qualquer branch do vercel
 ];
 
