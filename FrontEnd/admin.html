@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revisão profissional - Aflorar</title>
+  <link rel="stylesheet" href="./shared/css/global.css">
+  <link rel="stylesheet" href="./shared/css/admin.css">
+</head>
+
+<body>
+  <header class="admin-header">
+    <a class="admin-brand" href="./index.html">Aflorar <span>Revisão profissional</span></a>
+    <button id="adminLogout" type="button" class="icon-button" title="Sair" aria-label="Sair" hidden>⎋</button>
+  </header>
+
+  <main class="admin-main">
+    <section id="adminLogin" class="admin-login" hidden>
+      <h1>Acesso administrativo</h1>
+      <p>Entre com a conta Google autorizada para revisar cadastros profissionais.</p>
+      <form>
+        <p id="mensagemErro" role="alert" class="admin-error" hidden></p>
+        <button type="button" class="admin-button" data-google-auth="admin">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="">
+          Entrar com Google
+        </button>
+      </form>
+    </section>
+
+    <section id="adminDashboard" hidden>
+      <div class="admin-title-row">
+        <div>
+          <p class="admin-kicker">AFLORAR / ADMINISTRAÇÃO</p>
+          <h1>Revisão de profissionais</h1>
+        </div>
+        <button id="refreshQueue" type="button" class="secondary-button">Atualizar lista</button>
+      </div>
+      <p class="admin-guidance">
+        Confira o registro no <a href="https://cadastro.cfp.org.br/" target="_blank" rel="noopener noreferrer">Cadastro
+          Nacional do CFP</a>,
+        confira o cadastro no <a href="https://e-psi.cfp.org.br/" target="_blank" rel="noopener noreferrer">e-Psi</a>
+          e compare a identidade por videochamada ou serviço de verificação apropriado. A consulta pública, sozinha, não prova identidade. Não envie nem armazene documentos nesta tela.
+      </p>
+      <p id="adminStatus" class="admin-status" role="status"></p>
+      <div id="pendingList" class="pending-list"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./shared/js/auth-session.js"></script>
+  <script src="./shared/js/admin.js"></script>
+</body>
+
+</html>

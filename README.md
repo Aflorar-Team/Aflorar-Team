@@ -132,6 +132,7 @@ GEMINI_API_KEY=sua_chave_do_gemini
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_KEY=sua_chave_anonima_do_supabase
 SUPABASE_SERVICE_ROLE_KEY=sua_chave_de_servico_do_supabase
+ADMIN_EMAIL=administrador@seudominio.com
 PORT=3000
 ```
 
@@ -156,13 +157,20 @@ Abra `http://localhost:3000` no navegador.
 | `SUPABASE_URL` | URL do projeto no Supabase |
 | `SUPABASE_KEY` | Chave anônima pública do Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Chave administrativa privada, exclusiva do backend |
+| `ADMIN_EMAIL` | E-mail verificado autorizado a revisar profissionais |
 | `PORT` | Porta do servidor (padrão: 3000) |
 
 ### Papéis de conta e aprovação profissional
 
-Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql` no SQL Editor do Supabase. Novos pacientes recebem o papel pelo backend; novos psicólogos permanecem pendentes até a verificação do CRP. A aprovação deve ser feita por um administrador no `app_metadata` do usuário, adicionando `psicologo` a `roles` e definindo `psicologo_status` como `aprovado`.
+Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql` no SQL Editor do Supabase. Configure `ADMIN_EMAIL` no Render com o e-mail verificado que terá acesso ao painel `/admin.html`; o administrador entra com Google. Novos pacientes recebem o papel pelo backend; psicólogos ficam pendentes até revisão manual. No painel, confira CRP no Cadastro Nacional do CFP, confira o cadastro e-Psi e confirme a identidade por um canal confiável; a busca pública sozinha não prova identidade. O backend registra a decisão em `app_metadata` e na tabela `psicologos`.
 
-Contas criadas antes desta mudança precisam de migração administrativa explícita: atribua `paciente` ou `psicologo` em `app_metadata.roles` somente após conferir a identidade e o perfil. Não copie automaticamente os papéis antigos de `user_metadata`, pois esse campo pode ser editado pelo próprio usuário.
+Contas de pacientes criadas antes desta mudança precisam receber `paciente` em `app_metadata.roles` por uma migração administrativa após conferência. Psicólogos antigos não devem receber o papel automaticamente: devem completar os dados novamente para entrar na fila `/admin.html` e passar pela mesma revisão. Não copie papéis de `user_metadata`, pois esse campo pode ser editado pelo próprio usuário.
+
+O e-Psi é informado pelo profissional e conferido manualmente; o sistema não afirma que a validação é automática. Não faça scraping do portal do CFP. Para consultar uma integração autorizada, contate o CFP/CRP pelo canal oficial e solicite documentação, condições de uso, limites, custos e processo de homologação.
+
+Modelo de solicitação ao CFP/CRP:
+
+> Olá, represento a plataforma Aflorar, que está estruturando o cadastro e a validação de profissionais de Psicologia. O CFP/CRP oferece API ou serviço oficial para consulta automatizada do número de registro, regional e situação ativa? Se sim, poderiam informar requisitos de acesso, termos de uso, limites, custos e processo de homologação? Também gostaríamos de confirmar como deve ser verificado o cadastro e-Psi para profissionais que atendem por meios digitais. Obrigado.
 
 ---
 

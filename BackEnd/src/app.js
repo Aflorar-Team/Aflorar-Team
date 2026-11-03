@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import {
   GEMINI_API_KEY,
+  ADMIN_EMAIL,
   readEnv,
   SUPABASE_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
@@ -118,7 +119,14 @@ const setJardinsFallback = (usuarioId, canteiros) => {
 
 const normalizarCpf = (valor = "") => String(valor).replace(/\D/g, "");
 const normalizarTelefone = (valor = "") => String(valor).replace(/\D/g, "");
-const normalizarCrp = (valor = "") => String(valor).replace(/\D/g, "");
+const normalizarCrp = (valor = "") => {
+  const crp = String(valor).trim().toUpperCase().replace(/\s+/g, "");
+  const apenasDigitos = crp.replace(/\D/g, "");
+  if (/^\d{6,10}$/.test(apenasDigitos)) {
+    return `${apenasDigitos.slice(0, 2)}/${apenasDigitos.slice(2)}`;
+  }
+  return crp;
+};
 
 const criarClienteAuth = () => createClient(
   SUPABASE_URL,
@@ -148,6 +156,22 @@ const usuarioComPerfil = (usuario, perfil) => {
   };
 };
 
+async function autenticarAdmin(req) {
+  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return { erro: "Autenticação obrigatória.", status: 401 };
+  if (!ADMIN_EMAIL) return { erro: "ADMIN_EMAIL não configurado no backend.", status: 503 };
+
+  const clienteAuth = criarClienteAuth();
+  const { data, error } = await clienteAuth.auth.getUser(token);
+  const user = data?.user;
+  if (error || !user) return { erro: "Sessão inválida ou expirada.", status: 401 };
+  if (!user.email_confirmed_at || user.email?.toLowerCase() !== ADMIN_EMAIL) {
+    return { erro: "Acesso administrativo não autorizado.", status: 403 };
+  }
+
+  return { user };
+}
+
 async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
   const admin = criarClienteAdmin();
   if (!admin) {
@@ -165,6 +189,27 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
   const rolesAtuais = new Set(Array.isArray(usuario.app_metadata?.roles)
     ? usuario.app_metadata.roles.filter((role) => ["paciente", "psicologo"].includes(role))
     : []);
+  let psicologoAprovado = false;
+  let perfilAnterior;
+  if (perfil === "psicologo" && rolesAtuais.has("psicologo")) {
+    const { data, error: erroPerfilAnterior } = await admin
+      .from("psicologos")
+      .select("cpf, crp, epsi, telefone, status_verificacao, registro_verificado, epsi_verificado, identidade_verificada, verificado_por, verificado_em, observacao_verificacao")
+      .eq("usuario_id", usuarioId)
+      .maybeSingle();
+    if (erroPerfilAnterior) {
+      return { erro: "Não foi possível verificar o cadastro profissional existente.", status: 500 };
+    }
+    perfilAnterior = data;
+    const dadosAnteriores = metadadosAtuais.perfis?.psicologo || metadadosAtuais;
+    psicologoAprovado = perfilAnterior?.status_verificacao === "aprovado"
+      && dadosAnteriores.nome === dadosPerfil.nome
+      && String(perfilAnterior.cpf || "").trim() === dadosPerfil.cpf
+      && perfilAnterior.crp === dadosPerfil.crp
+      && perfilAnterior.epsi === dadosPerfil.epsi
+      && perfilAnterior.telefone === dadosPerfil.telefone;
+    if (!psicologoAprovado) rolesAtuais.delete("psicologo");
+  }
   const perfisAtualizados = { ...perfisAtuais, [perfil]: dadosPerfil };
   const userMetadata = {
     ...metadadosAtuais,
@@ -173,6 +218,7 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
     telefone: dadosPerfil.telefone,
     perfis: perfisAtualizados,
   };
+  if (perfil === "psicologo") userMetadata.epsi = dadosPerfil.epsi;
   const appMetadata = { ...(usuario.app_metadata || {}), roles: [...rolesAtuais] };
 
   const { error: erroUsuario } = await admin.from("usuarios").upsert({
@@ -187,7 +233,17 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
     usuario_id: usuarioId,
     cpf: dadosPerfil.cpf,
     telefone: dadosPerfil.telefone,
-    ...(perfil === "psicologo" ? { crp: dadosPerfil.crp } : {}),
+    ...(perfil === "psicologo" ? {
+      crp: dadosPerfil.crp,
+      epsi: dadosPerfil.epsi,
+      status_verificacao: psicologoAprovado ? "aprovado" : "pendente",
+      registro_verificado: psicologoAprovado && perfilAnterior.registro_verificado,
+      epsi_verificado: psicologoAprovado && perfilAnterior.epsi_verificado,
+      identidade_verificada: psicologoAprovado && perfilAnterior.identidade_verificada,
+      verificado_por: psicologoAprovado ? perfilAnterior.verificado_por : null,
+      verificado_em: psicologoAprovado ? perfilAnterior.verificado_em : null,
+      observacao_verificacao: psicologoAprovado ? perfilAnterior.observacao_verificacao : null,
+    } : {}),
   }, { onConflict: "usuario_id" });
   if (erroPerfil) {
     console.error(`Erro ao salvar perfil na tabela ${tabelaPerfil}:`, erroPerfil);
@@ -197,7 +253,7 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
   if (perfil === "paciente") {
     rolesAtuais.add("paciente");
     appMetadata.roles = [...rolesAtuais];
-  } else if (rolesAtuais.has("psicologo")) {
+  } else if (psicologoAprovado) {
     appMetadata.psicologo_status = "aprovado";
   } else {
     appMetadata.psicologo_status = "pendente";
@@ -205,13 +261,18 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
 
   const { data, error } = await admin.auth.admin.updateUserById(usuarioId, {
     user_metadata: userMetadata,
-    app_metadata: appMetadata,
+    app_metadata: {
+      ...appMetadata,
+      ...(perfil === "psicologo" ? {
+        psicologo_status: psicologoAprovado ? "aprovado" : "pendente",
+      } : {}),
+    },
   });
 
   if (error) return { erro: "Não foi possível salvar o perfil.", status: 500 };
   return {
     usuario: data.user,
-    statusPerfil: perfil === "psicologo" && !rolesAtuais.has("psicologo") ? "pendente" : "ativo",
+    statusPerfil: perfil === "psicologo" && !psicologoAprovado ? "pendente" : "ativo",
   };
 }
 
@@ -330,14 +391,17 @@ app.post("/api/oauth/complete-profile", async (req, res) => {
     cpf: normalizarCpf(cpf),
     telefone: normalizarTelefone(telefone),
   };
-  if (tipo === "psicologo") dadosPerfil.crp = normalizarCrp(crp);
+  if (tipo === "psicologo") {
+    dadosPerfil.crp = normalizarCrp(crp);
+    dadosPerfil.epsi = String(req.body.epsi || "").trim();
+  }
 
   if (!dadosPerfil.nome || dadosPerfil.cpf.length !== 11
     || dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
     return res.status(400).json({ erro: "Nome, CPF ou telefone inválido." });
   }
-  if (tipo === "psicologo" && (dadosPerfil.crp.length < 4 || dadosPerfil.crp.length > 8)) {
-    return res.status(400).json({ erro: "CRP inválido." });
+  if (tipo === "psicologo" && (!/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp) || !dadosPerfil.epsi)) {
+    return res.status(400).json({ erro: "Informe CRP no formato UF/número e o cadastro e-Psi." });
   }
 
   try {
@@ -365,6 +429,136 @@ app.post("/api/oauth/complete-profile", async (req, res) => {
     console.error("Erro ao concluir perfil OAuth:", error);
     return res.status(500).json({ erro: "Erro ao salvar o perfil." });
   }
+});
+
+app.get("/api/admin/psychologists/pending", async (req, res) => {
+  const autenticacao = await autenticarAdmin(req);
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço administrativo indisponível." });
+
+  const { data: psicologos, error } = await admin
+    .from("psicologos")
+    .select("usuario_id, cpf, crp, epsi, telefone, criado_em")
+    .eq("status_verificacao", "pendente")
+    .order("criado_em", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao listar cadastros pendentes:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar os cadastros pendentes." });
+  }
+
+  const ids = (psicologos || []).map((perfil) => perfil.usuario_id);
+  if (!ids.length) return res.json({ cadastros: [] });
+
+  const { data: usuarios, error: erroUsuarios } = await admin
+    .from("usuarios")
+    .select("id, nome, email")
+    .in("id", ids);
+  if (erroUsuarios) {
+    console.error("Erro ao carregar dados das contas pendentes:", erroUsuarios);
+    return res.status(500).json({ erro: "Não foi possível carregar os dados das contas." });
+  }
+
+  const usuariosPorId = new Map((usuarios || []).map((usuario) => [usuario.id, usuario]));
+  return res.json({
+    cadastros: psicologos.map((perfil) => ({
+      ...perfil,
+      usuario: usuariosPorId.get(perfil.usuario_id) || null,
+    })),
+  });
+});
+
+app.post("/api/admin/psychologists/:usuarioId/review", async (req, res) => {
+  const autenticacao = await autenticarAdmin(req);
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const { decisao, registroConferido, epsiConferido, identidadeConferida, observacao = "" } = req.body;
+  if (!["aprovado", "recusado"].includes(decisao)) {
+    return res.status(400).json({ erro: "Decisão inválida." });
+  }
+  if (decisao === "aprovado"
+    && (registroConferido !== true || epsiConferido !== true || identidadeConferida !== true)) {
+    return res.status(400).json({ erro: "Para aprovar, confirme CRP, e-Psi e identidade do profissional." });
+  }
+  if (decisao === "recusado" && !String(observacao).trim()) {
+    return res.status(400).json({ erro: "Informe o motivo da recusa." });
+  }
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço administrativo indisponível." });
+
+  const usuarioId = req.params.usuarioId;
+  const { data: perfil, error: erroPerfil } = await admin
+    .from("psicologos")
+    .select("usuario_id")
+    .eq("usuario_id", usuarioId)
+    .eq("status_verificacao", "pendente")
+    .maybeSingle();
+  if (erroPerfil) return res.status(500).json({ erro: "Não foi possível localizar o cadastro." });
+  if (!perfil) return res.status(404).json({ erro: "Cadastro pendente não encontrado." });
+
+  const agora = new Date().toISOString();
+  const { data: revisao, error: erroAtualizacao } = await admin
+    .from("psicologos")
+    .update({
+      status_verificacao: decisao,
+      registro_verificado: decisao === "aprovado" && registroConferido === true,
+      epsi_verificado: decisao === "aprovado" && epsiConferido === true,
+      identidade_verificada: decisao === "aprovado" && identidadeConferida === true,
+      verificado_por: autenticacao.user.id,
+      verificado_em: agora,
+      observacao_verificacao: String(observacao).trim() || null,
+    })
+    .eq("usuario_id", usuarioId)
+    .eq("status_verificacao", "pendente")
+    .select("usuario_id")
+    .maybeSingle();
+  if (erroAtualizacao) {
+    console.error("Erro ao registrar revisão profissional:", erroAtualizacao);
+    return res.status(500).json({ erro: "Não foi possível registrar a decisão." });
+  }
+  if (!revisao) return res.status(409).json({ erro: "Este cadastro já foi revisado por outra pessoa." });
+
+  const desfazerRevisao = async () => {
+    await admin.from("psicologos").update({
+      status_verificacao: "pendente",
+      registro_verificado: false,
+      epsi_verificado: false,
+      identidade_verificada: false,
+      verificado_por: null,
+      verificado_em: null,
+      observacao_verificacao: null,
+    }).eq("usuario_id", usuarioId).eq("status_verificacao", decisao);
+  };
+
+  const { data: conta, error: erroConta } = await admin.auth.admin.getUserById(usuarioId);
+  if (erroConta || !conta.user) {
+    await desfazerRevisao();
+    return res.status(500).json({ erro: "Decisão registrada, mas não foi possível atualizar o acesso. Tente novamente." });
+  }
+
+  const roles = new Set(Array.isArray(conta.user.app_metadata?.roles)
+    ? conta.user.app_metadata.roles.filter((role) => ["paciente", "psicologo"].includes(role))
+    : []);
+  if (decisao === "aprovado") roles.add("psicologo");
+  else roles.delete("psicologo");
+
+  const { error: erroPapel } = await admin.auth.admin.updateUserById(usuarioId, {
+    app_metadata: {
+      ...(conta.user.app_metadata || {}),
+      roles: [...roles],
+      psicologo_status: decisao,
+    },
+  });
+  if (erroPapel) {
+    console.error("Erro ao atualizar papel após revisão:", erroPapel);
+    await desfazerRevisao();
+    return res.status(500).json({ erro: "Decisão registrada, mas não foi possível atualizar o acesso." });
+  }
+
+  return res.json({ mensagem: `Cadastro ${decisao} com sucesso.` });
 });
 
 app.use((error, req, res, next) => {
@@ -533,19 +727,20 @@ app.post("/api/refresh-session", async (req, res) => {
 });
 
 app.post("/api/cadastro-psicologo", async (req, res) => {
-  const { nome, cpf, crp, email, telefone, senha } = req.body;
-  if (!nome || !cpf || !crp || !email || !telefone || !senha)
+  const { nome, cpf, crp, epsi, email, telefone, senha } = req.body;
+  if (!nome || !cpf || !crp || !epsi || !email || !telefone || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
 
   const dadosPerfil = {
     nome: String(nome).trim(),
     cpf: normalizarCpf(cpf),
     crp: normalizarCrp(crp),
+    epsi: String(epsi).trim(),
     telefone: normalizarTelefone(telefone),
   };
   if (dadosPerfil.cpf.length !== 11) return res.status(400).json({ erro: "CPF inválido." });
-  if (dadosPerfil.crp.length < 4 || dadosPerfil.crp.length > 8) {
-    return res.status(400).json({ erro: "CRP inválido." });
+  if (!/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp) || !dadosPerfil.epsi) {
+    return res.status(400).json({ erro: "Informe CRP no formato UF/número e o cadastro e-Psi." });
   }
   if (dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
     return res.status(400).json({ erro: "Telefone inválido." });
@@ -595,6 +790,9 @@ app.post("/api/login-psicologo", async (req, res) => {
 
   if (data.user?.app_metadata?.psicologo_status === "pendente") {
     return res.status(403).json({ erro: "Seu cadastro profissional aguarda a verificação do CRP." });
+  }
+  if (data.user?.app_metadata?.psicologo_status === "recusado") {
+    return res.status(403).json({ erro: "Seu cadastro profissional não foi aprovado. Entre em contato com o suporte." });
   }
 
   if (!usuarioTemPerfil(data.user, "psicologo")) {

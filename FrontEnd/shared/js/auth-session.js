@@ -111,7 +111,8 @@
   function perfilCompleto(usuario, tipo) {
     const metadados = usuario?.user_metadata || {};
     const perfil = metadados.perfis?.[tipo] || (metadados.tipo === tipo ? metadados : {});
-    return Boolean(perfil.nome && perfil.cpf && perfil.telefone && (tipo !== "psicologo" || perfil.crp));
+    return Boolean(perfil.nome && perfil.cpf && perfil.telefone
+      && (tipo !== "psicologo" || (perfil.crp && perfil.epsi)));
   }
 
   async function processarRetornoGoogle() {
@@ -119,7 +120,7 @@
     const parametros = new URLSearchParams(window.location.search);
     const tipo = parametros.get("tipo");
 
-    if (!["paciente", "psicologo"].includes(tipo)) {
+    if (!["paciente", "psicologo", "admin"].includes(tipo)) {
       throw new Error("Não foi possível identificar o tipo de conta selecionado.");
     }
 
@@ -132,6 +133,11 @@
     }
 
     const { session } = data;
+    if (tipo === "admin") {
+      window.location.replace("/admin.html");
+      return;
+    }
+
     const roles = session.user.app_metadata?.roles || [];
 
     if (tipo === "psicologo"
@@ -139,6 +145,13 @@
       && !roles.includes("psicologo")) {
       const error = new Error("Seu cadastro profissional aguarda a verificação do CRP.");
       error.code = "PSICOLOGO_PENDENTE";
+      throw error;
+    }
+    if (tipo === "psicologo"
+      && session.user.app_metadata?.psicologo_status === "recusado"
+      && !roles.includes("psicologo")) {
+      const error = new Error("Seu cadastro profissional não foi aprovado. Entre em contato com o suporte.");
+      error.code = "PSICOLOGO_RECUSADO";
       throw error;
     }
 

@@ -40,12 +40,13 @@ form.addEventListener("submit", async (e) => {
 
   const nome = document.getElementById("nome").value.trim();
   const cpf = limparNumeros(document.getElementById("cpf").value);
-  const crp = limparNumeros(document.getElementById("crp").value);
+  const crp = document.getElementById("crp").value.trim();
+  const epsi = document.getElementById("epsi").value.trim();
   const email = document.getElementById("email").value.trim();
   const telefone = limparNumeros(document.getElementById("telefone").value);
   const senha = limitarSenha(document.getElementById("password").value.trim());
 
-  if (!nome || !cpf || !crp || !email || !telefone || !senha) {
+  if (!nome || !cpf || !crp || !epsi || !email || !telefone || !senha) {
     mostrarErro("Preencha todos os campos.");
     return;
   }
@@ -55,8 +56,8 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (crp.length < 4 || crp.length > 8) {
-    mostrarErro("CRP inválido. Use entre 4 e 8 dígitos.");
+  if (!/^\d{2}\/\d{4,8}$/.test(crp)) {
+    mostrarErro("Informe o CRP no formato UF/número, por exemplo 06/123456.");
     return;
   }
 
@@ -74,7 +75,7 @@ form.addEventListener("submit", async (e) => {
     const response = await fetch("https://aflorar-backend.onrender.com/api/cadastro-psicologo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, cpf, crp, email, telefone, senha }),
+      body: JSON.stringify({ nome, cpf, crp, epsi, email, telefone, senha }),
     });
 
     const data = await response.json();

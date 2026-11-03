@@ -4,7 +4,7 @@ const pendenteOAuth = document.getElementById("oauthPending");
 const voltarOAuth = document.getElementById("oauthBack");
 
 window.AflorarAuth.processarRetornoGoogle().catch((error) => {
-  if (error.code === "PSICOLOGO_PENDENTE") {
+  if (["PSICOLOGO_PENDENTE", "PSICOLOGO_RECUSADO"].includes(error.code)) {
     statusOAuth.textContent = error.message;
     pendenteOAuth.hidden = false;
     return;

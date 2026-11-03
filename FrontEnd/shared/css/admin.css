@@ -1,0 +1,293 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: #23312d;
+  background: #f2f5f2;
+  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+}
+
+.admin-header {
+  min-height: 64px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #dfe6e1;
+}
+
+.admin-brand {
+  color: #305b4b;
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-brand span {
+  margin-left: 14px;
+  padding-left: 14px;
+  color: #718078;
+  border-left: 1px solid #dfe6e1;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.admin-main {
+  width: min(100% - 40px, 1040px);
+  margin: 42px auto;
+}
+
+.admin-title-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.admin-kicker {
+  margin: 0 0 8px;
+  color: #75867d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-title-row h1,
+.admin-login h1 {
+  margin: 0;
+  color: #203a31;
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.admin-guidance {
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  color: #3c5147;
+  background: #e6eee8;
+  border-left: 3px solid #609278;
+  line-height: 1.55;
+}
+
+.admin-guidance a {
+  color: #245c49;
+  font-weight: 700;
+}
+
+.admin-status {
+  min-height: 24px;
+  margin: 14px 0;
+  color: #50635a;
+  font-size: 14px;
+}
+
+.admin-status.is-error,
+.admin-error {
+  color: #a33138;
+}
+
+.pending-list {
+  display: grid;
+  gap: 14px;
+}
+
+.review-item {
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #dfe6e1;
+  border-radius: 6px;
+}
+
+.review-item h2 {
+  margin: 0 0 4px;
+  color: #263d33;
+  font-size: 19px;
+}
+
+.review-email {
+  margin: 0 0 18px;
+  color: #718078;
+  font-size: 14px;
+}
+
+.review-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: #e5eae6;
+  border: 1px solid #e5eae6;
+}
+
+.review-detail {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  background: #f7f9f7;
+}
+
+.review-detail span {
+  color: #7a8981;
+  font-size: 11px;
+}
+
+.review-detail strong {
+  overflow-wrap: anywhere;
+  color: #2e4037;
+  font-size: 14px;
+}
+
+.review-checks {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.review-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #3e5148;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.review-check input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #39755d;
+}
+
+.review-item textarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px;
+  color: inherit;
+  background: #fbfcfb;
+  border: 1px solid #d9e1dc;
+  border-radius: 4px;
+  font: inherit;
+  resize: vertical;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-button,
+.secondary-button {
+  min-height: 40px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.admin-button {
+  color: #fff;
+  background: #34745a;
+}
+
+.admin-button:hover {
+  background: #285d47;
+}
+
+.secondary-button {
+  color: #40564b;
+  background: #fff;
+  border-color: #cbd6cf;
+}
+
+.secondary-button:hover {
+  background: #f4f7f4;
+}
+
+.danger-button {
+  color: #9c3d42;
+  border-color: #e3c8c9;
+}
+
+.admin-button:disabled,
+.secondary-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.admin-button img {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-login {
+  width: min(100%, 430px);
+  margin: 10vh auto;
+  padding: 30px;
+  background: #fff;
+  border: 1px solid #dfe6e1;
+  border-radius: 6px;
+}
+
+.admin-login p {
+  color: #65756c;
+  line-height: 1.5;
+}
+
+.admin-login .admin-button {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .admin-header {
+    padding: 0 16px;
+  }
+
+  .admin-brand span {
+    display: block;
+    margin: 3px 0 0;
+    padding: 0;
+    border: 0;
+    font-size: 11px;
+  }
+
+  .admin-main {
+    width: min(100% - 28px, 1040px);
+    margin: 26px auto;
+  }
+
+  .admin-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .review-item {
+    padding: 16px;
+  }
+
+  .review-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .review-actions {
+    flex-direction: column-reverse;
+  }
+
+  .review-actions button {
+    width: 100%;
+  }
+}
