@@ -40,7 +40,7 @@ form.addEventListener("submit", async (e) => {
 
     window.AflorarAuth.salvarSessao(data, "psicologo");
 
-    window.location.href = "./dashboard-psicologo.html";
+    window.location.href = "./Psicologo/dashboard-psicologo.html";
 
   } catch (error) {
     mostrarErro("Erro de conexão. Tente novamente.");
