@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS public.pacientes (
   cpf char(11) UNIQUE,
   telefone varchar(11),
   codigo_vinculo text NOT NULL UNIQUE DEFAULT (
-    'AFL-' || upper(substr(encode(gen_random_bytes(4), 'hex'), 1, 6))
+    'AFL-' || upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 10))
   ),
   criado_em timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT pacientes_cpf_valido CHECK (cpf IS NULL OR cpf ~ '^[0-9]{11}$'),
@@ -86,6 +86,19 @@ CREATE INDEX IF NOT EXISTS idx_vinculos_psicologo_status
   ON public.vinculos_paciente_psicologo (psicologo_id, status);
 CREATE INDEX IF NOT EXISTS idx_vinculos_paciente_status
   ON public.vinculos_paciente_psicologo (paciente_id, status);
+
+CREATE OR REPLACE FUNCTION public.jwt_has_role(required_role text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+AS $$
+  SELECT COALESCE(
+    (auth.jwt() -> 'app_metadata' -> 'roles')::jsonb ? required_role,
+    false
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.jwt_has_role(text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.pode_acessar_perfil(perfil_id uuid)
 RETURNS boolean
@@ -240,6 +253,20 @@ CREATE TABLE IF NOT EXISTS public.anotacoes_psicologo (
 CREATE INDEX IF NOT EXISTS idx_anotacoes_psicologo_paciente
   ON public.anotacoes_psicologo (psicologo_id, paciente_id);
 
+CREATE TABLE IF NOT EXISTS public.anotacoes_psicologo_diarias (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  psicologo_id uuid NOT NULL REFERENCES public.psicologos(usuario_id) ON DELETE CASCADE,
+  paciente_id uuid NOT NULL REFERENCES public.pacientes(usuario_id) ON DELETE CASCADE,
+  data_nota date NOT NULL DEFAULT CURRENT_DATE,
+  conteudo text NOT NULL DEFAULT '',
+  criado_em timestamptz NOT NULL DEFAULT now(),
+  atualizado_em timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (psicologo_id, paciente_id, data_nota)
+);
+
+CREATE INDEX IF NOT EXISTS idx_anotacoes_diarias_psicologo_paciente_data
+  ON public.anotacoes_psicologo_diarias (psicologo_id, paciente_id, data_nota DESC);
+
 CREATE TABLE IF NOT EXISTS public.conversas (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tipo text NOT NULL CHECK (tipo IN ('flora', 'paciente_psicologo')),
@@ -342,6 +369,7 @@ DECLARE
 BEGIN
   FOREACH tabela IN ARRAY ARRAY[
     'usuarios', 'configuracoes_usuario', 'vinculos_paciente_psicologo',
+    'anotacoes_psicologo_diarias',
     'diario_paginas', 'eventos_agenda', 'anotacoes_psicologo',
     'conversas', 'assinaturas_usuario'
   ] LOOP
@@ -368,6 +396,7 @@ ALTER TABLE public.jardins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.jardim_evolucoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.eventos_agenda ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.anotacoes_psicologo ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.anotacoes_psicologo_diarias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.mensagens_conversa ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.planos_assinatura ENABLE ROW LEVEL SECURITY;
@@ -458,9 +487,19 @@ CREATE POLICY jardins_proprios ON public.jardins FOR ALL TO authenticated
   USING (usuario_id = auth.uid()::text) WITH CHECK (usuario_id = auth.uid()::text);
 DROP POLICY IF EXISTS evolucoes_visualizar ON public.jardim_evolucoes;
 CREATE POLICY evolucoes_visualizar ON public.jardim_evolucoes FOR SELECT TO authenticated
-  USING (compartilhada OR EXISTS (
+  USING (EXISTS (
     SELECT 1 FROM public.jardins j
-    WHERE j.id = jardim_id AND j.usuario_id = auth.uid()::text
+    WHERE j.id = jardim_id
+      AND (
+        j.usuario_id = auth.uid()::text
+        OR (compartilhada AND EXISTS (
+          SELECT 1 FROM public.vinculos_paciente_psicologo v
+          WHERE v.paciente_id::text = j.usuario_id
+            AND v.psicologo_id = auth.uid()
+            AND v.status = 'aceito'
+            AND public.jwt_has_role('psicologo')
+        ))
+      )
   ));
 DROP POLICY IF EXISTS evolucoes_criar_proprias ON public.jardim_evolucoes;
 CREATE POLICY evolucoes_criar_proprias ON public.jardim_evolucoes FOR INSERT TO authenticated
@@ -507,6 +546,21 @@ CREATE POLICY anotacoes_psicologo_proprias ON public.anotacoes_psicologo FOR ALL
         AND v.status = 'aceito'
     ))
   );
+
+DROP POLICY IF EXISTS anotacoes_diarias_psicologo_vinculado ON public.anotacoes_psicologo_diarias;
+CREATE POLICY anotacoes_diarias_psicologo_vinculado ON public.anotacoes_psicologo_diarias FOR ALL TO authenticated
+  USING (psicologo_id = auth.uid() AND public.jwt_has_role('psicologo') AND EXISTS (
+    SELECT 1 FROM public.vinculos_paciente_psicologo v
+    WHERE v.paciente_id = anotacoes_psicologo_diarias.paciente_id
+      AND v.psicologo_id = auth.uid()
+      AND v.status = 'aceito'
+  ))
+  WITH CHECK (psicologo_id = auth.uid() AND public.jwt_has_role('psicologo') AND EXISTS (
+    SELECT 1 FROM public.vinculos_paciente_psicologo v
+    WHERE v.paciente_id = anotacoes_psicologo_diarias.paciente_id
+      AND v.psicologo_id = auth.uid()
+      AND v.status = 'aceito'
+  ));
 
 DROP POLICY IF EXISTS conversas_participantes_visualizar ON public.conversas;
 CREATE POLICY conversas_participantes_visualizar ON public.conversas FOR SELECT TO authenticated
@@ -582,6 +636,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.jardins TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.jardim_evolucoes TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.eventos_agenda TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.anotacoes_psicologo TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON public.anotacoes_psicologo_diarias TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.conversas TO authenticated;
 GRANT SELECT, INSERT ON public.mensagens_conversa TO authenticated;
 GRANT SELECT ON public.planos_assinatura TO authenticated;

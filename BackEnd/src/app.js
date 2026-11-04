@@ -172,6 +172,31 @@ async function autenticarAdmin(req) {
   return { user };
 }
 
+async function autenticarUsuario(req, perfil) {
+  const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return { erro: "Autenticação obrigatória.", status: 401 };
+
+  const clienteAuth = criarClienteAuth();
+  const { data, error } = await clienteAuth.auth.getUser(token);
+  if (error || !data.user) return { erro: "Sessão inválida ou expirada.", status: 401 };
+  if (!usuarioTemPerfil(data.user, perfil)) {
+    return { erro: "Acesso não autorizado para este perfil.", status: 403 };
+  }
+
+  return { user: data.user };
+}
+
+async function verificarVinculoAceito(admin, psicologoId, pacienteId) {
+  const { data, error } = await admin
+    .from("vinculos_paciente_psicologo")
+    .select("id")
+    .eq("psicologo_id", psicologoId)
+    .eq("paciente_id", pacienteId)
+    .eq("status", "aceito")
+    .maybeSingle();
+  return { aceito: Boolean(data), error };
+}
+
 async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
   const admin = criarClienteAdmin();
   if (!admin) {
@@ -194,7 +219,7 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
   if (perfil === "psicologo" && rolesAtuais.has("psicologo")) {
     const { data, error: erroPerfilAnterior } = await admin
       .from("psicologos")
-      .select("cpf, crp, epsi, telefone, status_verificacao, registro_verificado, epsi_verificado, identidade_verificada, verificado_por, verificado_em, observacao_verificacao")
+      .select("cpf, crp, telefone, status_verificacao, registro_verificado, identidade_verificada, verificado_por, verificado_em, observacao_verificacao")
       .eq("usuario_id", usuarioId)
       .maybeSingle();
     if (erroPerfilAnterior) {
@@ -206,7 +231,6 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
       && dadosAnteriores.nome === dadosPerfil.nome
       && String(perfilAnterior.cpf || "").trim() === dadosPerfil.cpf
       && perfilAnterior.crp === dadosPerfil.crp
-      && perfilAnterior.epsi === dadosPerfil.epsi
       && perfilAnterior.telefone === dadosPerfil.telefone;
     if (!psicologoAprovado) rolesAtuais.delete("psicologo");
   }
@@ -218,7 +242,6 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
     telefone: dadosPerfil.telefone,
     perfis: perfisAtualizados,
   };
-  if (perfil === "psicologo") userMetadata.epsi = dadosPerfil.epsi;
   const appMetadata = { ...(usuario.app_metadata || {}), roles: [...rolesAtuais] };
 
   const { error: erroUsuario } = await admin.from("usuarios").upsert({
@@ -235,10 +258,8 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
     telefone: dadosPerfil.telefone,
     ...(perfil === "psicologo" ? {
       crp: dadosPerfil.crp,
-      epsi: dadosPerfil.epsi,
       status_verificacao: psicologoAprovado ? "aprovado" : "pendente",
       registro_verificado: psicologoAprovado && perfilAnterior.registro_verificado,
-      epsi_verificado: psicologoAprovado && perfilAnterior.epsi_verificado,
       identidade_verificada: psicologoAprovado && perfilAnterior.identidade_verificada,
       verificado_por: psicologoAprovado ? perfilAnterior.verificado_por : null,
       verificado_em: psicologoAprovado ? perfilAnterior.verificado_em : null,
@@ -393,15 +414,14 @@ app.post("/api/oauth/complete-profile", async (req, res) => {
   };
   if (tipo === "psicologo") {
     dadosPerfil.crp = normalizarCrp(crp);
-    dadosPerfil.epsi = String(req.body.epsi || "").trim();
   }
 
   if (!dadosPerfil.nome || dadosPerfil.cpf.length !== 11
     || dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
     return res.status(400).json({ erro: "Nome, CPF ou telefone inválido." });
   }
-  if (tipo === "psicologo" && (!/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp) || !dadosPerfil.epsi)) {
-    return res.status(400).json({ erro: "Informe CRP no formato UF/número e o cadastro e-Psi." });
+  if (tipo === "psicologo" && !/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp)) {
+    return res.status(400).json({ erro: "Informe o CRP no formato UF/número." });
   }
 
   try {
@@ -431,6 +451,363 @@ app.post("/api/oauth/complete-profile", async (req, res) => {
   }
 });
 
+app.get("/api/paciente/codigo-vinculo", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de cadastro indisponível." });
+
+  const { data, error } = await admin
+    .from("pacientes")
+    .select("codigo_vinculo")
+    .eq("usuario_id", autenticacao.user.id)
+    .maybeSingle();
+  if (error) {
+    console.error("Erro ao carregar código de vínculo do paciente:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar seu código." });
+  }
+  if (!data?.codigo_vinculo) {
+    return res.status(404).json({ erro: "Código não encontrado. Entre em contato com o suporte." });
+  }
+
+  return res.json({ codigo: data.codigo_vinculo });
+});
+
+app.get("/api/paciente/vinculos-pendentes", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de cadastro indisponível." });
+
+  const { data: vinculos, error } = await admin
+    .from("vinculos_paciente_psicologo")
+    .select("id, psicologo_id, criado_em")
+    .eq("paciente_id", autenticacao.user.id)
+    .eq("status", "pendente")
+    .neq("solicitado_por", autenticacao.user.id)
+    .order("criado_em", { ascending: true });
+  if (error) {
+    console.error("Erro ao carregar solicitações de vínculo:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar as solicitações." });
+  }
+  if (!vinculos?.length) return res.json({ solicitacoes: [] });
+
+  const idsPsicologos = [...new Set(vinculos.map((vinculo) => vinculo.psicologo_id))];
+  const [{ data: perfis }, { data: usuarios }] = await Promise.all([
+    admin.from("psicologos").select("usuario_id, crp").in("usuario_id", idsPsicologos),
+    admin.from("usuarios").select("id, nome").in("id", idsPsicologos),
+  ]);
+  const perfisPorId = new Map((perfis || []).map((perfil) => [perfil.usuario_id, perfil]));
+  const usuariosPorId = new Map((usuarios || []).map((usuario) => [usuario.id, usuario]));
+
+  return res.json({
+    solicitacoes: vinculos.map((vinculo) => ({
+      id: vinculo.id,
+      criado_em: vinculo.criado_em,
+      psicologo: {
+        nome: usuariosPorId.get(vinculo.psicologo_id)?.nome || "Profissional",
+        crp: perfisPorId.get(vinculo.psicologo_id)?.crp || "",
+      },
+    })),
+  });
+});
+
+app.post("/api/paciente/vinculos/:vinculoId/aceitar", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de cadastro indisponível." });
+
+  const { data, error } = await admin
+    .from("vinculos_paciente_psicologo")
+    .update({ status: "aceito" })
+    .eq("id", req.params.vinculoId)
+    .eq("paciente_id", autenticacao.user.id)
+    .eq("status", "pendente")
+    .neq("solicitado_por", autenticacao.user.id)
+    .select("id")
+    .maybeSingle();
+  if (error) {
+    console.error("Erro ao aceitar solicitação de vínculo:", error);
+    return res.status(500).json({ erro: "Não foi possível aceitar a solicitação." });
+  }
+  if (!data) return res.status(404).json({ erro: "Solicitação pendente não encontrada." });
+
+  return res.json({ mensagem: "Vínculo confirmado com sucesso." });
+});
+
+app.post("/api/psicologo/vinculos", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "psicologo");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const codigo = String(req.body.codigo || "").trim().toUpperCase();
+  if (!/^AFL-[A-F0-9]{6,12}$/.test(codigo)) {
+    return res.status(400).json({ erro: "Informe um código de paciente válido." });
+  }
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de cadastro indisponível." });
+
+  const { data: paciente, error: erroPaciente } = await admin
+    .from("pacientes")
+    .select("usuario_id")
+    .eq("codigo_vinculo", codigo)
+    .maybeSingle();
+  if (erroPaciente) {
+    console.error("Erro ao localizar código de paciente:", erroPaciente);
+    return res.status(500).json({ erro: "Não foi possível validar o código." });
+  }
+  if (!paciente) return res.status(404).json({ erro: "Código não encontrado. Confira com o paciente." });
+
+  const { data: contaPaciente, error: erroContaPaciente } = await admin.auth.admin.getUserById(paciente.usuario_id);
+  if (erroContaPaciente || !usuarioTemPerfil(contaPaciente?.user, "paciente")) {
+    return res.status(404).json({ erro: "Código não encontrado. Confira com o paciente." });
+  }
+
+  const { data: vinculoExistente, error: erroVinculoExistente } = await admin
+    .from("vinculos_paciente_psicologo")
+    .select("status")
+    .eq("paciente_id", paciente.usuario_id)
+    .eq("psicologo_id", autenticacao.user.id)
+    .maybeSingle();
+  if (erroVinculoExistente) {
+    console.error("Erro ao verificar vínculo existente:", erroVinculoExistente);
+    return res.status(500).json({ erro: "Não foi possível verificar o vínculo." });
+  }
+  if (vinculoExistente) {
+    const mensagem = vinculoExistente.status === "aceito"
+      ? "Este paciente já está vinculado ao seu perfil."
+      : "Já existe uma solicitação ou vínculo para este paciente.";
+    return res.status(409).json({ erro: mensagem });
+  }
+
+  const { error } = await admin.from("vinculos_paciente_psicologo").insert({
+    paciente_id: paciente.usuario_id,
+    psicologo_id: autenticacao.user.id,
+    solicitado_por: autenticacao.user.id,
+    status: "pendente",
+  });
+  if (error) {
+    console.error("Erro ao criar solicitação de vínculo:", error);
+    return res.status(error.code === "23505" ? 409 : 500).json({
+      erro: error.code === "23505"
+        ? "Já existe uma solicitação ou vínculo para este paciente."
+        : "Não foi possível enviar a solicitação.",
+    });
+  }
+
+  return res.status(201).json({ mensagem: "Solicitação enviada. O vínculo será ativado quando o paciente aceitar." });
+});
+
+app.get("/api/psicologo/vinculos", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "psicologo");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de cadastro indisponível." });
+
+  const { data: vinculos, error } = await admin
+    .from("vinculos_paciente_psicologo")
+    .select("id, paciente_id, status, criado_em")
+    .eq("psicologo_id", autenticacao.user.id)
+    .in("status", ["pendente", "aceito"])
+    .order("criado_em", { ascending: false });
+  if (error) {
+    console.error("Erro ao carregar vínculos do psicólogo:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar os vínculos." });
+  }
+
+  const idsPacientes = [...new Set((vinculos || [])
+    .filter((vinculo) => vinculo.status === "aceito")
+    .map((vinculo) => vinculo.paciente_id))];
+  const { data: usuarios } = idsPacientes.length
+    ? await admin.from("usuarios").select("id, nome").in("id", idsPacientes)
+    : { data: [] };
+  const usuariosPorId = new Map((usuarios || []).map((usuario) => [usuario.id, usuario]));
+
+  return res.json({
+    vinculos: (vinculos || []).map((vinculo) => ({
+      id: vinculo.id,
+      paciente_id: vinculo.paciente_id,
+      status: vinculo.status,
+      criado_em: vinculo.criado_em,
+      paciente: vinculo.status === "aceito"
+        ? { nome: usuariosPorId.get(vinculo.paciente_id)?.nome || "Paciente" }
+        : null,
+    })),
+  });
+});
+
+app.post("/api/paciente/humor", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+
+  const humor = String(req.body.humor || "").trim();
+  const emoji = String(req.body.emoji || "").trim();
+  const emocoesPermitidas = new Map([
+    ["Feliz", "😊"], ["Radiante", "😁"], ["Neutro", "😐"], ["Irritado", "😠"],
+    ["Triste", "😢"], ["Ansioso", "😰"], ["Estressado", "😵"], ["Depressivo", "😞"],
+    ["Inseguro", "😟"], ["Cansado", "😴"], ["Desmotivado", "😶"], ["Preocupado", "😧"],
+  ]);
+  if (!emocoesPermitidas.has(humor) || emocoesPermitidas.get(humor) !== emoji) {
+    return res.status(400).json({ erro: "Selecione uma emoção válida." });
+  }
+  const dataRegistro = String(req.body.data_registro || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataRegistro)) {
+    return res.status(400).json({ erro: "Data do registro inválida." });
+  }
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de registros indisponível." });
+  const { error } = await admin.from("registros_humor").upsert({
+    paciente_id: autenticacao.user.id,
+    data_registro: dataRegistro,
+    humor,
+    emoji,
+    origem: "inicio",
+  }, { onConflict: "paciente_id,data_registro,origem" });
+  if (error) {
+    console.error("Erro ao salvar registro de humor:", error);
+    return res.status(500).json({ erro: "Não foi possível salvar sua emoção." });
+  }
+  return res.json({ mensagem: "Emoção registrada." });
+});
+
+app.get("/api/psicologo/pacientes/:pacienteId/humor", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "psicologo");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de registros indisponível." });
+
+  const { aceito, error: erroVinculo } = await verificarVinculoAceito(
+    admin,
+    autenticacao.user.id,
+    req.params.pacienteId,
+  );
+  if (erroVinculo) return res.status(500).json({ erro: "Não foi possível validar o vínculo." });
+  if (!aceito) return res.status(403).json({ erro: "Este paciente não está vinculado ao seu perfil." });
+
+  const periodo = req.query.periodo || "mensal";
+  if (!["diario", "semanal", "mensal"].includes(periodo)) {
+    return res.status(400).json({ erro: "Período inválido." });
+  }
+  const hoje = String(req.query.hoje || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(hoje)) {
+    return res.status(400).json({ erro: "Informe uma data de referência válida." });
+  }
+  const inicio = new Date(`${hoje}T12:00:00Z`);
+  if (periodo === "semanal") inicio.setUTCDate(inicio.getUTCDate() - 6);
+  if (periodo === "mensal") inicio.setUTCDate(inicio.getUTCDate() - 29);
+
+  const { data, error } = await admin
+    .from("registros_humor")
+    .select("data_registro, humor, emoji, origem")
+    .eq("paciente_id", req.params.pacienteId)
+    .gte("data_registro", inicio.toISOString().slice(0, 10))
+    .lte("data_registro", hoje)
+    .order("data_registro", { ascending: true });
+  if (error) {
+    console.error("Erro ao carregar registros de humor:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar os registros de humor." });
+  }
+  return res.json({ registros: data || [] });
+});
+
+app.get("/api/psicologo/pacientes/:pacienteId/anotacoes", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "psicologo");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de anotações indisponível." });
+
+  const { aceito, error: erroVinculo } = await verificarVinculoAceito(admin, autenticacao.user.id, req.params.pacienteId);
+  if (erroVinculo) return res.status(500).json({ erro: "Não foi possível validar o vínculo." });
+  if (!aceito) return res.status(403).json({ erro: "Este paciente não está vinculado ao seu perfil." });
+
+  const dataNota = String(req.query.data || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataNota)) return res.status(400).json({ erro: "Informe uma data válida." });
+  const { data, error } = await admin
+    .from("anotacoes_psicologo_diarias")
+    .select("id, data_nota, conteudo, atualizado_em")
+    .eq("psicologo_id", autenticacao.user.id)
+    .eq("paciente_id", req.params.pacienteId)
+    .eq("data_nota", dataNota)
+    .maybeSingle();
+  if (error) {
+    console.error("Erro ao carregar anotação diária:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar a anotação." });
+  }
+  return res.json({ anotacao: data || { data_nota: dataNota, conteudo: "" } });
+});
+
+app.put("/api/psicologo/pacientes/:pacienteId/anotacoes", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "psicologo");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço de anotações indisponível." });
+
+  const { aceito, error: erroVinculo } = await verificarVinculoAceito(admin, autenticacao.user.id, req.params.pacienteId);
+  if (erroVinculo) return res.status(500).json({ erro: "Não foi possível validar o vínculo." });
+  if (!aceito) return res.status(403).json({ erro: "Este paciente não está vinculado ao seu perfil." });
+
+  const dataNota = String(req.body.data || "");
+  const conteudo = String(req.body.conteudo || "");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataNota) || conteudo.length > 10000) {
+    return res.status(400).json({ erro: "Data inválida ou anotação acima de 10.000 caracteres." });
+  }
+  const { data, error } = await admin.from("anotacoes_psicologo_diarias").upsert({
+    psicologo_id: autenticacao.user.id,
+    paciente_id: req.params.pacienteId,
+    data_nota: dataNota,
+    conteudo,
+  }, { onConflict: "psicologo_id,paciente_id,data_nota" })
+    .select("id, data_nota, conteudo, atualizado_em")
+    .single();
+  if (error) {
+    console.error("Erro ao salvar anotação diária:", error);
+    return res.status(500).json({ erro: "Não foi possível salvar a anotação." });
+  }
+  return res.json({ anotacao: data });
+});
+
+app.get("/api/psicologo/pacientes/:pacienteId/evolucoes-compartilhadas", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "psicologo");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço do jardim indisponível." });
+
+  const { aceito, error: erroVinculo } = await verificarVinculoAceito(admin, autenticacao.user.id, req.params.pacienteId);
+  if (erroVinculo) return res.status(500).json({ erro: "Não foi possível validar o vínculo." });
+  if (!aceito) return res.status(403).json({ erro: "Este paciente não está vinculado ao seu perfil." });
+
+  const { data: jardins, error: erroJardins } = await admin
+    .from("jardins")
+    .select("id, nome")
+    .eq("usuario_id", req.params.pacienteId);
+  if (erroJardins) return res.status(500).json({ erro: "Não foi possível carregar os jardins compartilhados." });
+  if (!jardins?.length) return res.json({ evolucoes: [] });
+
+  const jardinsPorId = new Map(jardins.map((jardim) => [jardim.id, jardim]));
+  const { data, error } = await admin
+    .from("jardim_evolucoes")
+    .select("id, jardim_id, texto, criado_em")
+    .eq("compartilhada", true)
+    .in("jardim_id", [...jardinsPorId.keys()])
+    .order("criado_em", { ascending: false });
+  if (error) {
+    console.error("Erro ao carregar evoluções compartilhadas:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar as anotações compartilhadas." });
+  }
+  return res.json({
+    evolucoes: (data || []).map((evolucao) => ({
+      ...evolucao,
+      jardim: jardinsPorId.get(evolucao.jardim_id)?.nome || "Jardim",
+    })),
+  });
+});
+
 app.get("/api/admin/psychologists/pending", async (req, res) => {
   const autenticacao = await autenticarAdmin(req);
   if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
@@ -440,7 +817,7 @@ app.get("/api/admin/psychologists/pending", async (req, res) => {
 
   const { data: psicologos, error } = await admin
     .from("psicologos")
-    .select("usuario_id, cpf, crp, epsi, telefone, criado_em")
+    .select("usuario_id, cpf, crp, telefone, criado_em")
     .eq("status_verificacao", "pendente")
     .order("criado_em", { ascending: true });
 
@@ -474,13 +851,13 @@ app.post("/api/admin/psychologists/:usuarioId/review", async (req, res) => {
   const autenticacao = await autenticarAdmin(req);
   if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
 
-  const { decisao, registroConferido, epsiConferido, identidadeConferida, observacao = "" } = req.body;
+  const { decisao, registroConferido, identidadeConferida, observacao = "" } = req.body;
   if (!["aprovado", "recusado"].includes(decisao)) {
     return res.status(400).json({ erro: "Decisão inválida." });
   }
   if (decisao === "aprovado"
-    && (registroConferido !== true || epsiConferido !== true || identidadeConferida !== true)) {
-    return res.status(400).json({ erro: "Para aprovar, confirme CRP, e-Psi e identidade do profissional." });
+    && (registroConferido !== true || identidadeConferida !== true)) {
+    return res.status(400).json({ erro: "Para aprovar, confirme o CRP no CFP e a identidade do profissional." });
   }
   if (decisao === "recusado" && !String(observacao).trim()) {
     return res.status(400).json({ erro: "Informe o motivo da recusa." });
@@ -505,7 +882,6 @@ app.post("/api/admin/psychologists/:usuarioId/review", async (req, res) => {
     .update({
       status_verificacao: decisao,
       registro_verificado: decisao === "aprovado" && registroConferido === true,
-      epsi_verificado: decisao === "aprovado" && epsiConferido === true,
       identidade_verificada: decisao === "aprovado" && identidadeConferida === true,
       verificado_por: autenticacao.user.id,
       verificado_em: agora,
@@ -525,7 +901,6 @@ app.post("/api/admin/psychologists/:usuarioId/review", async (req, res) => {
     await admin.from("psicologos").update({
       status_verificacao: "pendente",
       registro_verificado: false,
-      epsi_verificado: false,
       identidade_verificada: false,
       verificado_por: null,
       verificado_em: null,
@@ -727,20 +1102,19 @@ app.post("/api/refresh-session", async (req, res) => {
 });
 
 app.post("/api/cadastro-psicologo", async (req, res) => {
-  const { nome, cpf, crp, epsi, email, telefone, senha } = req.body;
-  if (!nome || !cpf || !crp || !epsi || !email || !telefone || !senha)
+  const { nome, cpf, crp, email, telefone, senha } = req.body;
+  if (!nome || !cpf || !crp || !email || !telefone || !senha)
     return res.status(400).json({ erro: "Preencha todos os campos." });
 
   const dadosPerfil = {
     nome: String(nome).trim(),
     cpf: normalizarCpf(cpf),
     crp: normalizarCrp(crp),
-    epsi: String(epsi).trim(),
     telefone: normalizarTelefone(telefone),
   };
   if (dadosPerfil.cpf.length !== 11) return res.status(400).json({ erro: "CPF inválido." });
-  if (!/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp) || !dadosPerfil.epsi) {
-    return res.status(400).json({ erro: "Informe CRP no formato UF/número e o cadastro e-Psi." });
+  if (!/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp)) {
+    return res.status(400).json({ erro: "Informe o CRP no formato UF/número." });
   }
   if (dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
     return res.status(400).json({ erro: "Telefone inválido." });
@@ -809,11 +1183,9 @@ app.post("/api/login-psicologo", async (req, res) => {
 });
 
 app.get("/api/jardins", async (req, res) => {
-  const { usuario_id } = req.query;
-
-  if (!usuario_id) {
-    return res.status(400).json({ erro: "usuario_id é obrigatório." });
-  }
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const usuario_id = autenticacao.user.id;
 
   if (!supabase) {
     const canteiros = getJardinsFallback(usuario_id);
@@ -850,9 +1222,11 @@ app.get("/api/jardins", async (req, res) => {
 });
 
 app.post("/api/jardins", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
   const { usuario_id, nome, posicao, nivel = 1 } = req.body;
 
-  if (!usuario_id || !nome || posicao === undefined) {
+  if (usuario_id !== autenticacao.user.id || !nome || posicao === undefined) {
     return res.status(400).json({ erro: "usuario_id, nome e posicao são obrigatórios." });
   }
 
@@ -920,11 +1294,13 @@ app.post("/api/jardins", async (req, res) => {
 });
 
 app.put("/api/jardins/:id", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
   const { id } = req.params;
   const { usuario_id, nome, nivel } = req.body;
 
-  if (!usuario_id) {
-    return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  if (usuario_id !== autenticacao.user.id) {
+    return res.status(403).json({ erro: "Acesso não autorizado a este jardim." });
   }
 
   if (!supabase) {
@@ -1000,11 +1376,13 @@ app.put("/api/jardins/:id", async (req, res) => {
 });
 
 app.delete("/api/jardins/:id", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
   const { id } = req.params;
   const { usuario_id } = req.body;
 
-  if (!usuario_id) {
-    return res.status(400).json({ erro: "usuario_id é obrigatório." });
+  if (usuario_id !== autenticacao.user.id) {
+    return res.status(403).json({ erro: "Acesso não autorizado a este jardim." });
   }
 
   if (!supabase) {
@@ -1054,6 +1432,65 @@ app.delete("/api/jardins/:id", async (req, res) => {
 
     return res.status(500).json({ erro: "Não foi possível excluir o canteiro." });
   }
+});
+
+app.get("/api/jardins/:id/evolucoes", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço do jardim indisponível." });
+
+  const { data: jardim, error: erroJardim } = await admin
+    .from("jardins")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("usuario_id", autenticacao.user.id)
+    .maybeSingle();
+  if (erroJardim) return res.status(500).json({ erro: "Não foi possível validar o jardim." });
+  if (!jardim) return res.status(404).json({ erro: "Jardim não encontrado." });
+
+  const { data, error } = await admin
+    .from("jardim_evolucoes")
+    .select("id, jardim_id, texto, compartilhada, criado_em")
+    .eq("jardim_id", jardim.id)
+    .order("criado_em", { ascending: false });
+  if (error) {
+    console.error("Erro ao carregar evoluções do jardim:", error);
+    return res.status(500).json({ erro: "Não foi possível carregar as evoluções." });
+  }
+  return res.json({ evolucoes: data || [] });
+});
+
+app.post("/api/jardins/:id/evolucoes", async (req, res) => {
+  const autenticacao = await autenticarUsuario(req, "paciente");
+  if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+  const texto = String(req.body.texto || "").trim();
+  const compartilhada = req.body.compartilhada === true;
+  if (!texto || texto.length > 600) {
+    return res.status(400).json({ erro: "Escreva uma evolução de até 600 caracteres." });
+  }
+
+  const admin = criarClienteAdmin();
+  if (!admin) return res.status(503).json({ erro: "Serviço do jardim indisponível." });
+  const { data: jardim, error: erroJardim } = await admin
+    .from("jardins")
+    .select("id")
+    .eq("id", req.params.id)
+    .eq("usuario_id", autenticacao.user.id)
+    .maybeSingle();
+  if (erroJardim) return res.status(500).json({ erro: "Não foi possível validar o jardim." });
+  if (!jardim) return res.status(404).json({ erro: "Jardim não encontrado." });
+
+  const { data, error } = await admin.from("jardim_evolucoes").insert({
+    jardim_id: jardim.id,
+    texto,
+    compartilhada,
+  }).select("id, jardim_id, texto, compartilhada, criado_em").single();
+  if (error) {
+    console.error("Erro ao salvar evolução do jardim:", error);
+    return res.status(500).json({ erro: "Não foi possível salvar a evolução." });
+  }
+  return res.status(201).json({ evolucao: data });
 });
 
 export { ensureJardinsTable };
