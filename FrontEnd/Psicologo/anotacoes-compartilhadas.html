@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anotações compartilhadas - Aflorar</title>
+  <link rel="stylesheet" href="./css/anotacoes-compartilhadas.css">
+</head>
+
+<body>
+  <header class="navbar">
+    <a class="logo" href="./dashboard-psicologo.html">Aflorar</a>
+    <nav class="menu" aria-label="Navegação principal">
+      <a href="./dashboard-psicologo.html">Início</a>
+      <a href="./agenda-psicologo.html">Agenda</a>
+    </nav>
+  </header>
+
+  <main>
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">JARDIM / COMPARTILHAMENTOS</p>
+        <h1>Anotações compartilhadas</h1>
+      </div>
+      <label for="pacienteCompartilhado">Paciente
+        <select id="pacienteCompartilhado"></select>
+      </label>
+    </header>
+    <p id="statusCompartilhadas" class="status" role="status">Carregando anotações...</p>
+    <section id="listaCompartilhadas" class="lista-compartilhadas" aria-live="polite"></section>
+  </main>
+
+  <script src="./js/anotacoes-compartilhadas.js"></script>
+</body>
+
+</html>

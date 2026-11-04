@@ -112,7 +112,7 @@
     const metadados = usuario?.user_metadata || {};
     const perfil = metadados.perfis?.[tipo] || (metadados.tipo === tipo ? metadados : {});
     return Boolean(perfil.nome && perfil.cpf && perfil.telefone
-      && (tipo !== "psicologo" || (perfil.crp && perfil.epsi)));
+      && (tipo !== "psicologo" || perfil.crp));
   }
 
   async function processarRetornoGoogle() {

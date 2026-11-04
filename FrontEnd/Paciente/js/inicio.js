@@ -1,4 +1,5 @@
 const diasContainer = document.getElementById("dias");
+const API_URL = "https://aflorar-backend.onrender.com";
 function gerarSemana() {
 
   diasContainer.innerHTML = "";
@@ -63,18 +64,38 @@ overlay.addEventListener("click", (e) => {
   }
 });
 
-function selecionar(emoji) {
+async function selecionar(emoji) {
 
   const hoje = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit"
   });
+  const dataRegistro = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
 
   localStorage.setItem(hoje, emoji);
 
   voltar();
 
   gerarSemana();
+
+  const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+  const token = localStorage.getItem("token");
+  if (!usuario || localStorage.getItem("tipo") !== "paciente" || !token) return;
+
+  try {
+    const response = await fetch(`${API_URL}/api/paciente/humor`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ humor: emocoes[emoji].nome, emoji, data_registro: dataRegistro }),
+    });
+    if (!response.ok) throw new Error("Não foi possível sincronizar a emoção.");
+  } catch (error) {
+    console.error("Falha ao sincronizar o registro de humor:", error);
+    alert("A emoção foi mostrada neste dispositivo, mas não sincronizou com sua conta. Tente novamente quando estiver online.");
+  }
 }
 
 const links = document.querySelectorAll(".menu a");

@@ -12,8 +12,8 @@ if (!usuario || tipo !== "psicologo") {
 }
 
 const idPsicologo = usuario?.id || usuario?.email || "local";
+const API_URL = "https://aflorar-backend.onrender.com";
 const chaveAgenda = `aflorar.agenda.${idPsicologo}`;
-const chavePacientes = `aflorar.pacientes-vinculados.${idPsicologo}`;
 const chaveAlertas = `aflorar.alertas.${idPsicologo}`;
 const modal = document.getElementById("popupModal");
 const popupTitulo = document.getElementById("popupTitulo");
@@ -31,6 +31,64 @@ function criarElemento(tag, classe, texto) {
   if (classe) elemento.className = classe;
   if (texto !== undefined) elemento.textContent = texto;
   return elemento;
+}
+
+async function requisicaoApi(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+  const resultado = await response.json();
+  if (!response.ok) throw new Error(resultado.erro || "Não foi possível concluir a solicitação.");
+  return resultado;
+}
+
+async function carregarPacientesReais() {
+  const lista = document.getElementById("listaPacientes");
+  if (!lista) return;
+
+  try {
+    const resultado = await requisicaoApi("/api/psicologo/vinculos");
+    const pacientes = resultado.vinculos.filter((vinculo) => vinculo.status === "aceito");
+    lista.replaceChildren();
+    if (!pacientes.length) {
+      lista.appendChild(criarElemento("p", "estado-vazio-pacientes", "Nenhum paciente aceitou o vínculo ainda."));
+      return;
+    }
+
+    pacientes.forEach((vinculo) => {
+      const card = criarElemento("article", "card-paciente");
+      const topo = criarElemento("div", "topo");
+      const info = criarElemento("div", "info-paciente");
+      info.append(
+        criarElemento("span", "tag-nome", vinculo.paciente.nome),
+        criarElemento("span", "tag-horario", "Vínculo confirmado"),
+      );
+      topo.appendChild(info);
+      const acoes = criarElemento("div", "acoes-paciente");
+      [
+        ["./graficos-pacientes.html", "Gráficos", "📊"],
+        ["./anotacoes-psicologo.html", "Notas diárias", "📝"],
+        ["./anotacoes-compartilhadas.html", "Jardim compartilhado", "🌿"],
+      ].forEach(([pagina, titulo, icone]) => {
+        const link = criarElemento("a", "acao-paciente", `${icone} ${titulo}`);
+        link.href = `${pagina}?pacienteId=${encodeURIComponent(vinculo.paciente_id)}`;
+        link.setAttribute("aria-label", `${titulo} de ${vinculo.paciente.nome}`);
+        acoes.appendChild(link);
+      });
+      card.append(topo, acoes);
+      lista.appendChild(card);
+    });
+  } catch (error) {
+    lista.replaceChildren(criarElemento("p", "estado-vazio-pacientes", error.message));
+  }
 }
 
 function lerLista(chave) {
@@ -207,72 +265,80 @@ function renderizarPacientes() {
   formulario.innerHTML = `
     <label for="codigoPaciente">Código único do paciente</label>
     <div class="campo-codigo">
-      <input id="codigoPaciente" name="codigo" type="text" maxlength="32" minlength="4" required
-        autocomplete="off" autocapitalize="characters" placeholder="Ex.: AFL-8K29Q" aria-describedby="ajudaCodigo erroCodigo">
+      <input id="codigoPaciente" name="codigo" type="text" maxlength="20" minlength="10" required
+        autocomplete="off" autocapitalize="characters" placeholder="Ex.: AFL-1A2B3C4D5E" aria-describedby="ajudaCodigo erroCodigo">
       <button class="botao-vincular" type="submit">Vincular</button>
     </div>
-    <p id="ajudaCodigo" class="ajuda-campo">Informe o código fornecido pelo paciente. Letras e números, com hífen opcional.</p>
+    <p id="ajudaCodigo" class="ajuda-campo">Informe o código que o paciente encontra nas configurações da conta.</p>
     <p id="erroCodigo" class="erro-campo" role="alert" hidden></p>
   `;
 
   const listaSection = criarElemento("section", "popup-secao pacientes-vinculados");
-  listaSection.appendChild(criarElemento("h5", "", "Pacientes vinculados"));
+  listaSection.appendChild(criarElemento("h5", "", "Solicitações e vínculos"));
   const lista = criarElemento("ul", "lista-codigos-paciente");
   const status = criarElemento("p", "status-vinculo");
 
-  function atualizarLista() {
-    const pacientes = lerLista(chavePacientes);
+  async function atualizarLista() {
     lista.replaceChildren();
-    if (!pacientes.length) {
-      lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum paciente vinculado por código."));
-    } else {
-      pacientes.forEach((paciente) => {
+    try {
+      const resultado = await requisicaoApi("/api/psicologo/vinculos");
+      if (!resultado.vinculos.length) {
+        lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhuma solicitação enviada."));
+        return;
+      }
+
+      resultado.vinculos.forEach((vinculo) => {
         const linha = criarElemento("li", "linha-codigo-paciente");
-        linha.appendChild(criarElemento("span", "", paciente.codigo));
-        linha.appendChild(criarElemento("time", "", new Date(paciente.adicionadoEm).toLocaleDateString("pt-BR")));
+        const texto = vinculo.status === "aceito"
+          ? `${vinculo.paciente.nome} · vínculo confirmado`
+          : "Solicitação enviada · aguardando aceite do paciente";
+        linha.appendChild(criarElemento("span", "", texto));
+        linha.appendChild(criarElemento("time", "", new Date(vinculo.criado_em).toLocaleDateString("pt-BR")));
         lista.appendChild(linha);
       });
+    } catch (error) {
+      lista.appendChild(criarElemento("li", "estado-vazio-popup", error.message));
     }
   }
 
-  formulario.addEventListener("submit", (evento) => {
+  formulario.addEventListener("submit", async (evento) => {
     evento.preventDefault();
     const campo = formulario.elements.codigo;
     const erro = formulario.querySelector("#erroCodigo");
     const codigo = campo.value.trim().toUpperCase();
-    const pacientes = lerLista(chavePacientes);
+    const botao = formulario.querySelector("button[type='submit']");
     erro.hidden = true;
     status.textContent = "";
 
-    if (!/^[A-Z0-9]+(?:-[A-Z0-9]+)*$/.test(codigo)) {
-      erro.textContent = "Use apenas letras, números e hífens.";
-      erro.hidden = false;
-      campo.focus();
-      return;
-    }
-    if (pacientes.some((paciente) => paciente.codigo === codigo)) {
-      erro.textContent = "Este código já está vinculado a este perfil.";
+    if (!/^AFL-[A-F0-9]{6,12}$/.test(codigo)) {
+      erro.textContent = "Confira o código no formato AFL seguido por letras de A a F e números.";
       erro.hidden = false;
       campo.focus();
       return;
     }
 
-    pacientes.push({ codigo, adicionadoEm: new Date().toISOString() });
+    botao.disabled = true;
     try {
-      localStorage.setItem(chavePacientes, JSON.stringify(pacientes));
+      const resultado = await requisicaoApi("/api/psicologo/vinculos", {
+        method: "POST",
+        body: JSON.stringify({ codigo }),
+      });
       campo.value = "";
-      atualizarLista();
-      status.textContent = "Código vinculado neste navegador.";
-    } catch {
-      erro.textContent = "Não foi possível salvar o vínculo neste navegador.";
+      status.textContent = resultado.mensagem;
+      await atualizarLista();
+      await carregarPacientesReais();
+    } catch (error) {
+      erro.textContent = error.message;
       erro.hidden = false;
+    } finally {
+      botao.disabled = false;
     }
   });
 
   const aviso = criarElemento(
     "p",
     "aviso-integracao",
-    "A validação de que o código pertence a um paciente depende da integração com o cadastro central. Por enquanto, o vínculo fica salvo somente neste navegador."
+    "O vínculo só fica ativo depois que o paciente aceitar a solicitação."
   );
   listaSection.append(lista, status);
   popupConteudo.replaceChildren(formulario, aviso, listaSection);
@@ -336,3 +402,5 @@ modal?.addEventListener("click", (evento) => {
 document.addEventListener("keydown", (evento) => {
   if (evento.key === "Escape" && modal?.classList.contains("active")) fecharPopup();
 });
+
+carregarPacientesReais();

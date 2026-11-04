@@ -1,0 +1,142 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: #f5f0ea;
+  color: #303a31;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 10px clamp(16px, 5vw, 56px);
+  background: #3b4737;
+}
+
+.logo,
+.menu a {
+  color: #fffdfa;
+  text-decoration: none;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.menu {
+  display: flex;
+  gap: 20px;
+}
+
+.menu a {
+  font-size: 14px;
+}
+
+main {
+  width: min(100% - 32px, 920px);
+  margin: 0 auto;
+  padding: 40px 0;
+  flex: 1;
+}
+
+.page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #c7cbbf;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #69775b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.page-heading label {
+  display: grid;
+  gap: 6px;
+  min-width: min(270px, 100%);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+select {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid #9aa38f;
+  border-radius: 6px;
+  background: #fffdfa;
+  color: #303a31;
+  font: inherit;
+}
+
+.status {
+  min-height: 22px;
+  color: #5d6758;
+  font-size: 14px;
+}
+
+.lista-compartilhadas {
+  display: grid;
+  gap: 0;
+}
+
+.evolucao-compartilhada {
+  padding: 20px 0;
+  border-bottom: 1px solid #c7cbbf;
+}
+
+.evolucao-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #69775b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.evolucao-compartilhada p {
+  margin: 12px 0 0;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+footer {
+  padding: 16px;
+  color: #798071;
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 620px) {
+  .page-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-heading label {
+    min-width: 0;
+  }
+
+  h1 {
+    font-size: 23px;
+  }
+}

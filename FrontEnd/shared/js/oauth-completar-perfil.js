@@ -8,7 +8,6 @@ const inputEmailGoogle = document.getElementById("emailGoogle");
 const inputCpfGoogle = document.getElementById("cpfGoogle");
 const inputTelefoneGoogle = document.getElementById("telefoneGoogle");
 const inputCrpGoogle = document.getElementById("crpGoogle");
-const inputEpsiGoogle = document.getElementById("epsiGoogle");
 const botaoSalvarGoogle = document.getElementById("salvarPerfilGoogle");
 let sessaoGoogle;
 
@@ -56,13 +55,11 @@ async function carregarPerfilGoogle() {
     : "Complete seu cadastro de paciente";
   document.getElementById("campoCrpGoogle").hidden = tipoPerfilGoogle !== "psicologo";
   inputCrpGoogle.required = tipoPerfilGoogle === "psicologo";
-  inputEpsiGoogle.required = tipoPerfilGoogle === "psicologo";
   inputNomeGoogle.value = perfilSalvo.nome || metadados.full_name || metadados.name || "";
   inputEmailGoogle.value = usuario.email || "";
   inputCpfGoogle.value = perfilSalvo.cpf || "";
   inputTelefoneGoogle.value = perfilSalvo.telefone || "";
   inputCrpGoogle.value = perfilSalvo.crp || "";
-  inputEpsiGoogle.value = perfilSalvo.epsi || "";
 }
 
 inputCpfGoogle.addEventListener("input", aplicarMascaraCpfGoogle);
@@ -76,15 +73,14 @@ formularioPerfilGoogle.addEventListener("submit", async (event) => {
   const cpf = limparNumeros(inputCpfGoogle.value);
   const telefone = limparNumeros(inputTelefoneGoogle.value);
   const crp = limparNumeros(inputCrpGoogle.value);
-  const epsi = inputEpsiGoogle.value.trim();
 
   if (!nome || cpf.length !== 11 || telefone.length < 10 || telefone.length > 11) {
     mostrarErroPerfil("Confira nome, CPF e telefone antes de continuar.");
     return;
   }
 
-  if (tipoPerfilGoogle === "psicologo" && ((crp.length < 6 || crp.length > 10) || !epsi)) {
-    mostrarErroPerfil("Informe o CRP e o cadastro e-Psi.");
+  if (tipoPerfilGoogle === "psicologo" && (crp.length < 6 || crp.length > 10)) {
+    mostrarErroPerfil("Informe um CRP válido.");
     return;
   }
 
@@ -98,7 +94,7 @@ formularioPerfilGoogle.addEventListener("submit", async (event) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${sessaoGoogle.access_token}`,
       },
-      body: JSON.stringify({ tipo: tipoPerfilGoogle, nome, cpf, telefone, crp, epsi }),
+      body: JSON.stringify({ tipo: tipoPerfilGoogle, nome, cpf, telefone, crp }),
     });
     const resultado = await response.json();
     if (!response.ok) throw new Error(resultado.erro || "Não foi possível salvar seu perfil.");

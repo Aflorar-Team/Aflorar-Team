@@ -4,16 +4,17 @@
   const TOTAL_SLOTS = 6; // 3x2 grid, last slot can be the "+" button
 
   // ---------- estado ----------
-  // usuárioId é obtido do localStorage; se não existir, cria um valor temporário "demo-user"
-  let usuarioId = localStorage.getItem("aflorar_usuario_id");
-
-  // Se o usuárioId não estiver presente, cria um valor temporário "demo-user" e armazena no localStorage, Temporário até Banco de dados de usuários estar implementado.
-  if (!usuarioId) {
-    usuarioId = "demo-user";
-    localStorage.setItem("aflorar_usuario_id", usuarioId);
-    console.log("[jardim.js] usuarioId ausente; usando valor temporário: demo-user");
+  let usuarioSessao = null;
+  try {
+    usuarioSessao = JSON.parse(localStorage.getItem("usuario") || "null");
+  } catch {}
+  const usuarioId = usuarioSessao?.id;
+  if (!usuarioId || localStorage.getItem("tipo") !== "paciente") {
+    window.location.replace("./login-paciente.html");
+    return;
   }
   let canteiros = []; // [{id, usuario_id, nome, nivel, posicao}]
+  let evolucoesAtuais = [];
   let editingId = null; // null = criando novo
   let plantaSelecionada = null;
   let voltarParaEvolucao = false;
@@ -45,7 +46,6 @@
   const evolutionShare = document.getElementById("evolution-share");
   const evolutionCount = document.getElementById("evolution-count");
   const evolutionFormError = document.getElementById("evolution-form-error");
-  const evolutionStorageKey = `aflorar_evolucoes_${usuarioId}`;
 
   let selectedLevel = 1;
 
@@ -145,18 +145,8 @@
     return div.innerHTML;
   }
 
-  function lerEvolucoes() {
-    try {
-      const evolucoes = JSON.parse(localStorage.getItem(evolutionStorageKey) || "{}");
-      return evolucoes && typeof evolucoes === "object" && !Array.isArray(evolucoes) ? evolucoes : {};
-    } catch (error) {
-      console.warn("Não foi possível ler as evoluções:", error);
-      return {};
-    }
-  }
-
   function desenharEvolucoes() {
-    const evolucoes = lerEvolucoes()[String(plantaSelecionada.id)] || [];
+    const evolucoes = evolucoesAtuais;
     evolutionList.replaceChildren();
 
     if (!evolucoes.length) {
@@ -176,15 +166,15 @@
       const label = document.createElement("h3");
       label.textContent = "Evolução";
       const date = document.createElement("time");
-      date.dateTime = evolucao.createdAt;
-      date.textContent = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(evolucao.createdAt));
+      date.dateTime = evolucao.criado_em;
+      date.textContent = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(new Date(evolucao.criado_em));
       header.append(label, date);
 
       const body = document.createElement("p");
-      body.textContent = evolucao.text;
+      body.textContent = evolucao.texto;
       item.append(header, body);
 
-      if (evolucao.publica) {
+      if (evolucao.compartilhada) {
         const badge = document.createElement("span");
         badge.className = "evolution-public-badge";
         badge.textContent = "Compartilhada";
@@ -195,18 +185,36 @@
     });
   }
 
-  function abrirEvolucoes(canteiro) {
+  async function abrirEvolucoes(canteiro) {
     plantaSelecionada = canteiro;
     document.getElementById("plant-portrait-name").textContent = canteiro.nome;
     document.getElementById("plant-portrait-level").textContent = `Nível ${canteiro.nivel || 1}`;
     document.getElementById("compose-plant-name").textContent = canteiro.nome;
     evolutionTitle.textContent = canteiro.nome;
-    desenharEvolucoes();
+    evolutionList.replaceChildren();
+    const carregando = document.createElement("p");
+    carregando.className = "evolution-empty";
+    carregando.textContent = "Carregando evoluções...";
+    evolutionList.appendChild(carregando);
     evolutionCompose.hidden = true;
     evolutionDetails.hidden = false;
     evolutionBackdrop.classList.add("show");
     evolutionBackdrop.setAttribute("aria-hidden", "false");
     document.getElementById("evolution-close").focus();
+
+    try {
+      const response = await apiRequest(`/api/jardins/${encodeURIComponent(canteiro.id)}/evolucoes`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.erro || "Não foi possível carregar as evoluções.");
+      evolucoesAtuais = payload.evolucoes || [];
+      desenharEvolucoes();
+    } catch (error) {
+      evolutionList.replaceChildren();
+      const falha = document.createElement("p");
+      falha.className = "evolution-empty";
+      falha.textContent = error.message || "Não foi possível carregar as evoluções.";
+      evolutionList.appendChild(falha);
+    }
   }
 
   function abrirFormularioEvolucao() {
@@ -250,7 +258,7 @@
   evolutionShare.addEventListener("change", () => {
     evolutionCompose.classList.toggle("is-public", evolutionShare.checked);
   });
-  evolutionCompose.addEventListener("submit", (event) => {
+  evolutionCompose.addEventListener("submit", async (event) => {
     event.preventDefault();
     const text = evolutionText.value.trim();
     if (!text || !plantaSelecionada) {
@@ -258,22 +266,22 @@
       return;
     }
 
-    const todasEvolucoes = lerEvolucoes();
-    const plantaId = String(plantaSelecionada.id);
-    todasEvolucoes[plantaId] = [
-      ...(todasEvolucoes[plantaId] || []),
-      { id: `${Date.now()}`, text, createdAt: new Date().toISOString(), publica: evolutionShare.checked },
-    ];
-
     try {
-      localStorage.setItem(evolutionStorageKey, JSON.stringify(todasEvolucoes));
+      const response = await apiRequest(`/api/jardins/${encodeURIComponent(plantaSelecionada.id)}/evolucoes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: text, compartilhada: evolutionShare.checked }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.erro || "Não foi possível salvar a evolução.");
+      evolucoesAtuais = [payload.evolucao, ...evolucoesAtuais];
       desenharEvolucoes();
       evolutionCompose.hidden = true;
       evolutionDetails.hidden = false;
       showToast("Evolução registrada!", "success");
     } catch (error) {
       console.error("Não foi possível salvar a evolução:", error);
-      evolutionFormError.textContent = "Não foi possível salvar. Verifique o espaço disponível no navegador.";
+      evolutionFormError.textContent = error.message || "Não foi possível salvar a evolução.";
     }
   });
   document.addEventListener("keydown", (event) => {
@@ -328,7 +336,13 @@
       console.log("[jardim.js] Tentando chamada na API:", url);
 
       try {
-        const response = await fetch(url, options);
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+            ...options.headers,
+          },
+        });
 
         if (response.status !== 404) {
           return response;
@@ -608,9 +622,6 @@
 
       canteiros = canteiros.filter((item) => String(item.id) !== idExcluido);
       saveLocalGarden(canteiros);
-      const evolucoes = lerEvolucoes();
-      delete evolucoes[idExcluido];
-      localStorage.setItem(evolutionStorageKey, JSON.stringify(evolucoes));
       voltarParaEvolucao = false;
       renderGrid();
       closeModal();

@@ -34,8 +34,14 @@
       </div>
     </div>
 
+    <label class="selecao-paciente" for="pacienteSelect">
+      Paciente
+      <select id="pacienteSelect" aria-describedby="statusGrafico"></select>
+    </label>
+    <p id="statusGrafico" class="status-grafico" role="status">Carregando registros...</p>
+
     <div class="card-grafico">
-      <h2>Gráficos do seu paciente</h2>
+      <h2 id="tituloGrafico">Registros de humor</h2>
 
       <div class="grafico-layout">
         <div class="canvas-wrapper">

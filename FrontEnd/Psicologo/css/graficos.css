@@ -52,6 +52,10 @@
     .btn-filtro.diario { background: #E8717A; }
     .btn-filtro.ativo { border-color: #333; }
 
+    .selecao-paciente { display: grid; gap: 6px; max-width: 420px; color: #333; font-size: 14px; font-weight: 600; }
+    .selecao-paciente select { min-height: 44px; padding: 8px 12px; border: 1px solid #b7c1ae; border-radius: 6px; background: white; color: #333; font: inherit; }
+    .status-grafico { min-height: 20px; color: #596275; font-size: 14px; }
+
     .card-grafico {
       background: white;
       border-radius: 16px;
@@ -101,3 +105,14 @@
     .legenda-emoji { font-size: 18px; }
 
     footer { text-align: center; padding: 15px; font-size: 12px; color: #aaa; }
+
+    @media (max-width: 720px) {
+      main { padding: 22px 16px; }
+      .topo { align-items: flex-start; flex-direction: column; gap: 14px; }
+      .filtros { width: 100%; gap: 6px; }
+      .btn-filtro { flex: 1; padding: 10px 8px; }
+      .card-grafico { padding: 22px 16px; }
+      .grafico-layout { flex-direction: column; gap: 24px; }
+      .canvas-wrapper { width: min(300px, 100%); }
+      .legenda { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }

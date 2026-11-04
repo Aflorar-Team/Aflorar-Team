@@ -1,129 +1,113 @@
+const API_URL = "https://aflorar-backend.onrender.com";
+const pacienteSelect = document.getElementById("pacienteNota");
+const dataNota = document.getElementById("dataNota");
 const editor = document.getElementById("editor");
-let selecaoSalva = null;
-let timerToast;
+const statusNota = document.getElementById("statusNota");
+const botaoSalvar = document.getElementById("salvarNota");
+let timerSalvamento;
 
-function carregarTextoAntigo(texto) {
-  const padrao = /(\*\*[^*]+\*\*|==[^=]+==|_[^_]+_)/g;
-  let inicio = 0;
-  let trecho;
-
-  while ((trecho = padrao.exec(texto))) {
-    editor.append(document.createTextNode(texto.slice(inicio, trecho.index)));
-    const marcador = trecho[0];
-    const elemento = document.createElement(marcador.startsWith("**") ? "strong" : marcador.startsWith("==") ? "mark" : "em");
-    elemento.textContent = marcador.slice(2, -2);
-    if (marcador.startsWith("_")) elemento.textContent = marcador.slice(1, -1);
-    editor.append(elemento);
-    inicio = trecho.index + marcador.length;
-  }
-
-  editor.append(document.createTextNode(texto.slice(inicio)));
+function dataHoje() {
+  const hoje = new Date();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoje.getDate()).padStart(2, "0");
+  return `${hoje.getFullYear()}-${mes}-${dia}`;
 }
 
-const salvoFormatado = localStorage.getItem("anotacoes_psicologo_formatadas");
-const salvoAntigo = localStorage.getItem("anotacoes_psicologo");
-if (salvoFormatado) {
-  editor.innerHTML = salvoFormatado;
-} else if (salvoAntigo) {
-  if (/[*_][^\n]+[*_]|==[^\n]+==/.test(salvoAntigo)) carregarTextoAntigo(salvoAntigo);
-  else editor.textContent = salvoAntigo;
-  localStorage.setItem("anotacoes_psicologo_formatadas", editor.innerHTML);
-  localStorage.setItem("anotacoes_psicologo", editor.innerText);
+async function requisicaoApi(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+  const resultado = await response.json();
+  if (!response.ok) throw new Error(resultado.erro || "Não foi possível concluir a solicitação.");
+  return resultado;
 }
 
-document.addEventListener("selectionchange", () => {
-  const selecao = window.getSelection();
-  if (selecao?.rangeCount && editor.contains(selecao.anchorNode)) {
-    selecaoSalva = selecao.getRangeAt(0).cloneRange();
+async function carregarAnotacao() {
+  const pacienteId = pacienteSelect.value;
+  const data = dataNota.value;
+  if (!pacienteId || !data) return;
+  clearTimeout(timerSalvamento);
+  editor.disabled = true;
+  statusNota.textContent = "Carregando anotação...";
+  try {
+    const resultado = await requisicaoApi(
+      `/api/psicologo/pacientes/${encodeURIComponent(pacienteId)}/anotacoes?data=${encodeURIComponent(data)}`,
+    );
+    editor.value = resultado.anotacao.conteudo;
+    editor.disabled = false;
+    statusNota.textContent = resultado.anotacao.atualizado_em
+      ? `Salva em ${new Date(resultado.anotacao.atualizado_em).toLocaleString("pt-BR")}`
+      : "Sem anotação salva para este dia.";
+    document.getElementById("tituloNota").textContent = `Anotação · ${pacienteSelect.selectedOptions[0].textContent}`;
+  } catch (error) {
+    editor.value = "";
+    statusNota.textContent = error.message;
   }
-});
+}
 
-document.querySelectorAll(".btn-ferramenta").forEach((botao) => {
-  botao.addEventListener("mousedown", (evento) => evento.preventDefault());
-});
-
-function aplicar(tipo) {
-  editor.focus();
-  const selecao = window.getSelection();
-  if (selecaoSalva && editor.contains(selecaoSalva.startContainer)) {
-    selecao.removeAllRanges();
-    selecao.addRange(selecaoSalva);
+async function salvarAnotacao() {
+  const pacienteId = pacienteSelect.value;
+  if (!pacienteId || !dataNota.value) return;
+  botaoSalvar.disabled = true;
+  statusNota.textContent = "Salvando...";
+  try {
+    await requisicaoApi(`/api/psicologo/pacientes/${encodeURIComponent(pacienteId)}/anotacoes`, {
+      method: "PUT",
+      body: JSON.stringify({ data: dataNota.value, conteudo: editor.value }),
+    });
+    statusNota.textContent = `Salva em ${new Date().toLocaleString("pt-BR")}`;
+  } catch (error) {
+    statusNota.textContent = error.message;
+  } finally {
+    botaoSalvar.disabled = false;
   }
-  if (!selecao || selecao.isCollapsed || !editor.contains(selecao.anchorNode)) return;
+}
 
-  if (tipo === "destacar") {
-    const elementoAncora = selecao.anchorNode.nodeType === Node.TEXT_NODE
-      ? selecao.anchorNode.parentElement
-      : selecao.anchorNode;
-    const destaque = elementoAncora.closest("mark, span[style*='background-color']");
-    const contemSelecao = destaque && editor.contains(destaque)
-      && destaque.contains(selecao.focusNode);
-
-    if (contemSelecao) {
-      destaque.replaceWith(...destaque.childNodes);
-      selecaoSalva = null;
-      salvarLocal(false);
+async function carregarPacientes() {
+  pacienteSelect.replaceChildren();
+  editor.disabled = true;
+  try {
+    const resultado = await requisicaoApi("/api/psicologo/vinculos");
+    const pacientes = resultado.vinculos.filter((vinculo) => vinculo.status === "aceito");
+    pacientes.forEach((vinculo) => {
+      const option = document.createElement("option");
+      option.value = vinculo.paciente_id;
+      option.textContent = vinculo.paciente.nome;
+      pacienteSelect.appendChild(option);
+    });
+    const solicitado = new URLSearchParams(location.search).get("pacienteId");
+    if (solicitado && pacientes.some((vinculo) => vinculo.paciente_id === solicitado)) pacienteSelect.value = solicitado;
+    if (!pacientes.length) {
+      statusNota.textContent = "Nenhum paciente com vínculo confirmado.";
       return;
     }
+    editor.disabled = false;
+    await carregarAnotacao();
+  } catch (error) {
+    statusNota.textContent = error.message;
   }
-
-  const comandos = { negrito: "bold", italico: "italic", destacar: "hiliteColor" };
-  document.execCommand(comandos[tipo], false, tipo === "destacar" ? "#fff1a8" : undefined);
-  selecaoSalva = null;
-  salvarLocal(false);
 }
-
-function mudarTamanho(valor) {
-  editor.focus();
-  const selecao = window.getSelection();
-  if (selecaoSalva && editor.contains(selecaoSalva.startContainer)) {
-    selecao.removeAllRanges();
-    selecao.addRange(selecaoSalva);
-  }
-
-  if (selecao && !selecao.isCollapsed && editor.contains(selecao.anchorNode)) {
-    document.execCommand("fontSize", false, "7");
-    editor.querySelectorAll('font[size="7"]').forEach((fonte) => {
-      const span = document.createElement("span");
-      span.style.fontSize = `${Number(valor)}px`;
-      span.innerHTML = fonte.innerHTML;
-      fonte.replaceWith(span);
-    });
-  } else {
-    editor.style.fontSize = `${Number(valor)}px`;
-  }
-  salvarLocal(false);
-}
-
-function salvarLocal(mostrarConfirmacao = true) {
-  localStorage.setItem("anotacoes_psicologo_formatadas", editor.innerHTML);
-  localStorage.setItem("anotacoes_psicologo", editor.innerText);
-  if (!mostrarConfirmacao) return;
-
-  const toast = document.getElementById("toastSalvo");
-  toast.style.display = "block";
-  clearTimeout(timerToast);
-  timerToast = setTimeout(() => toast.style.display = "none", 2500);
-}
-
-editor.addEventListener("input", () => salvarLocal(false));
-setInterval(() => salvarLocal(false), 30000);
 
 function exportarPDF() {
   if (!window.jspdf?.jsPDF) {
-    alert("Não foi possível carregar a ferramenta de exportação do PDF.");
+    statusNota.textContent = "Não foi possível carregar a ferramenta de exportação do PDF.";
     return;
   }
-
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const texto = editor.innerText.trim() || "Sem anotações.";
-  const linhas = doc.splitTextToSize(texto, 180);
-
+  const linhas = doc.splitTextToSize(editor.value.trim() || "Sem anotações.", 180);
   doc.setFontSize(16);
-  doc.text("Anotações - Aflorar", 14, 20);
+  doc.text(`Anotação diária · ${pacienteSelect.selectedOptions[0]?.textContent || "Paciente"}`, 14, 20);
   doc.setFontSize(12);
-  let posicaoY = 35;
+  doc.text(`Data: ${dataNota.value}`, 14, 29);
+  let posicaoY = 40;
   linhas.forEach((linha) => {
     if (posicaoY > 280) {
       doc.addPage();
@@ -132,5 +116,17 @@ function exportarPDF() {
     doc.text(linha, 14, posicaoY);
     posicaoY += 7;
   });
-  doc.save("anotacoes-paciente.pdf");
+  doc.save(`anotacao-${dataNota.value}.pdf`);
 }
+
+dataNota.value = dataHoje();
+dataNota.addEventListener("change", carregarAnotacao);
+pacienteSelect.addEventListener("change", carregarAnotacao);
+botaoSalvar.addEventListener("click", salvarAnotacao);
+editor.addEventListener("input", () => {
+  clearTimeout(timerSalvamento);
+  statusNota.textContent = "Alterações não salvas.";
+  timerSalvamento = setTimeout(salvarAnotacao, 1000);
+});
+
+carregarPacientes();

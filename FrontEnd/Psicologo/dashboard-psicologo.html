@@ -19,6 +19,9 @@
       <a href="./agenda-psicologo.html">
         <span class="icon">📅</span> Agenda
       </a>
+      <a href="./anotacoes-compartilhadas.html">
+        <span class="icon">🌿</span> Compartilhadas
+      </a>
     </nav>
     <div>
       <a href="./configuracoes.html" aria-label="Ir para configurações">
@@ -44,62 +47,8 @@
 
     <div class="right">
       <h3>Pacientes</h3>
-      <div class="lista-pacientes">
-
-        <div class="card-paciente">
-          <div class="topo">
-            <div class="info-paciente">
-              <span class="tag-nome" style="background:#E8717A">Amanda B.</span>
-              <span class="tag-horario">Ter. 15:30</span>
-            </div>
-            <img class="foto-paciente" src="https://randomuser.me/api/portraits/women/44.jpg"
-              alt="Foto de perfil de Amanda B.">
-          </div>
-          <p class="descricao">Descrição da paciente...</p>
-          <div class="acoes-paciente">
-            <button title="Editar" onclick="window.location.href='./graficos-pacientes.html'">📊</button>
-            <button title="Chat" onclick="window.location.href='./chat-psicologo.html'">💬</button>
-            <button type="button" title="Alertas" aria-label="Alertas de Amanda B.">🔔</button>
-            <button title="Notas" onclick="window.location.href='./anotacoes-psicologo.html'">📋</button>
-          </div>
-        </div>
-
-        <div class="card-paciente">
-          <div class="topo">
-            <div class="info-paciente">
-              <span class="tag-nome" style="background:#F4A261">Luan K.</span>
-              <span class="tag-horario">Ter. 10:30</span>
-            </div>
-            <img class="foto-paciente" src="https://randomuser.me/api/portraits/men/32.jpg"
-              alt="Foto de perfil de Luan K.">
-          </div>
-          <p class="descricao">Descrição do paciente...</p>
-          <div class="acoes-paciente">
-            <button title="Editar" onclick="window.location.href='./graficos-pacientes.html'">📊</button>
-            <button title="Chat" onclick="window.location.href='./chat-psicologo.html'">💬</button>
-            <button type="button" title="Alertas" aria-label="Alertas de Luan K.">🔔</button>
-            <button title="Notas" onclick="window.location.href='./anotacoes-psicologo.html'">📋</button>
-          </div>
-        </div>
-
-        <div class="card-paciente">
-          <div class="topo">
-            <div class="info-paciente">
-              <span class="tag-nome" style="background:#E8717A">João G.</span>
-              <span class="tag-horario">Qui. 12:00</span>
-            </div>
-            <img class="foto-paciente" src="https://randomuser.me/api/portraits/men/75.jpg"
-              alt="Foto de perfil de João G.">
-          </div>
-          <p class="descricao">Descrição do paciente...</p>
-          <div class="acoes-paciente">
-            <button title="Editar" onclick="window.location.href='./graficos-pacientes.html'">📊</button>
-            <button title="Chat" onclick="window.location.href='./chat-psicologo.html'">💬</button>
-            <button type="button" title="Alertas" aria-label="Alertas de João G.">🔔</button>
-            <button title="Notas" onclick="window.location.href='./anotacoes-psicologo.html'">📋</button>
-          </div>
-        </div>
-
+      <div class="lista-pacientes" id="listaPacientes" aria-live="polite">
+        <p class="estado-vazio-pacientes">Carregando vínculos...</p>
       </div>
     </div>
   </main>

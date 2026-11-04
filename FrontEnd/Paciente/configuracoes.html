@@ -91,6 +91,26 @@
     </div>
   </div>
 
+  <section class="codigo-paciente" id="areaCodigoPaciente" aria-labelledby="tituloCodigoPaciente">
+    <div>
+      <h2 id="tituloCodigoPaciente">Código de vínculo</h2>
+      <p>Compartilhe este código somente com o profissional que deseja vincular à sua conta.</p>
+    </div>
+    <div class="codigo-paciente-linha">
+      <output id="codigoVinculoPaciente" aria-live="polite">Carregando...</output>
+      <button type="button" class="btn-copiar-codigo" id="copiarCodigoPaciente" disabled>Copiar código</button>
+    </div>
+    <p class="status-codigo-paciente" id="statusCodigoPaciente" role="status"></p>
+
+    <div class="solicitacoes-paciente">
+      <h3>Solicitações de vínculo</h3>
+      <ul id="listaSolicitacoesPaciente">
+        <li>Carregando solicitações...</li>
+      </ul>
+      <p class="status-solicitacoes-paciente" id="statusSolicitacoesPaciente" role="status"></p>
+    </div>
+  </section>
+
   <div class="toast" id="toast"></div>
 
   <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>

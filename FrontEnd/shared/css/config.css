@@ -300,3 +300,118 @@ footer {
   font-size: 12px;
   color: #aaa;
 }
+
+.codigo-paciente {
+  display: grid;
+  gap: 16px;
+  margin: 0 60px 36px;
+  padding: 22px 24px;
+  border-top: 1px solid rgba(59, 71, 55, 0.2);
+  background: rgba(255, 253, 250, 0.7);
+}
+
+.codigo-paciente h2,
+.solicitacoes-paciente h3 {
+  color: #3b4737;
+}
+
+.codigo-paciente h2 {
+  font-size: 20px;
+}
+
+.codigo-paciente p {
+  margin-top: 5px;
+  color: #62685d;
+  font-size: 14px;
+}
+
+.codigo-paciente-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+#codigoVinculoPaciente {
+  min-width: 180px;
+  padding: 10px 14px;
+  border: 1px dashed #799a66;
+  border-radius: 6px;
+  color: #3b4737;
+  font: 700 20px/1.2 monospace;
+  letter-spacing: 0;
+}
+
+.btn-copiar-codigo,
+.btn-aceitar-vinculo {
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #3b4737;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-copiar-codigo:disabled,
+.btn-aceitar-vinculo:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.solicitacoes-paciente {
+  display: grid;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(59, 71, 55, 0.15);
+}
+
+.solicitacoes-paciente h3 {
+  font-size: 16px;
+}
+
+#listaSolicitacoesPaciente {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+#listaSolicitacoesPaciente li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  color: #3b4737;
+  border-bottom: 1px solid rgba(59, 71, 55, 0.1);
+}
+
+body.dark .codigo-paciente {
+  background: rgba(46, 46, 69, 0.7);
+}
+
+body.dark .codigo-paciente h2,
+body.dark .solicitacoes-paciente h3,
+body.dark .codigo-paciente p,
+body.dark #codigoVinculoPaciente,
+body.dark #listaSolicitacoesPaciente li {
+  color: #eee;
+}
+
+@media (max-width: 720px) {
+  .codigo-paciente {
+    margin: 0 20px 28px;
+    padding: 20px 0;
+  }
+
+  .codigo-paciente-linha {
+    align-items: stretch;
+  }
+
+  #codigoVinculoPaciente {
+    min-width: 0;
+    flex: 1 1 150px;
+  }
+}

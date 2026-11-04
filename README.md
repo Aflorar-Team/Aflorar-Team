@@ -162,15 +162,15 @@ Abra `http://localhost:3000` no navegador.
 
 ### Papéis de conta e aprovação profissional
 
-Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql` no SQL Editor do Supabase. Configure `ADMIN_EMAIL` no Render com o e-mail verificado que terá acesso ao painel `/admin.html`; o administrador entra com Google. Novos pacientes recebem o papel pelo backend; psicólogos ficam pendentes até revisão manual. No painel, confira CRP no Cadastro Nacional do CFP, confira o cadastro e-Psi e confirme a identidade por um canal confiável; a busca pública sozinha não prova identidade. O backend registra a decisão em `app_metadata` e na tabela `psicologos`.
+Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql`, `BackEnd/migrations/20261104_patient_link_codes.sql` e `BackEnd/migrations/20261104_patient_mood_and_notes.sql` no SQL Editor do Supabase. A migração de códigos adiciona códigos únicos aos pacientes existentes; a migração de humor e anotações habilita notas diárias e limita a leitura das evoluções compartilhadas ao psicólogo vinculado. Configure `ADMIN_EMAIL` no Render com o e-mail verificado que terá acesso ao painel `/admin.html`; o administrador entra com Google. Novos pacientes recebem o papel pelo backend; psicólogos ficam pendentes até revisão manual. No painel, confira o CRP no Cadastro Nacional do CFP e confirme a identidade por um canal confiável; a busca pública sozinha não prova identidade. O backend registra a decisão em `app_metadata` e na tabela `psicologos`.
 
 Contas de pacientes criadas antes desta mudança precisam receber `paciente` em `app_metadata.roles` por uma migração administrativa após conferência. Psicólogos antigos não devem receber o papel automaticamente: devem completar os dados novamente para entrar na fila `/admin.html` e passar pela mesma revisão. Não copie papéis de `user_metadata`, pois esse campo pode ser editado pelo próprio usuário.
 
-O e-Psi é informado pelo profissional e conferido manualmente; o sistema não afirma que a validação é automática. Não faça scraping do portal do CFP. Para consultar uma integração autorizada, contate o CFP/CRP pelo canal oficial e solicite documentação, condições de uso, limites, custos e processo de homologação.
+Não faça scraping do portal do CFP. Para consultar uma integração autorizada, contate o CFP/CRP pelo canal oficial e solicite documentação, condições de uso, limites, custos e processo de homologação.
 
 Modelo de solicitação ao CFP/CRP:
 
-> Olá, represento a plataforma Aflorar, que está estruturando o cadastro e a validação de profissionais de Psicologia. O CFP/CRP oferece API ou serviço oficial para consulta automatizada do número de registro, regional e situação ativa? Se sim, poderiam informar requisitos de acesso, termos de uso, limites, custos e processo de homologação? Também gostaríamos de confirmar como deve ser verificado o cadastro e-Psi para profissionais que atendem por meios digitais. Obrigado.
+> Olá, represento a plataforma Aflorar, que está estruturando o cadastro e a validação de profissionais de Psicologia. O CFP/CRP oferece API ou serviço oficial para consulta automatizada do número de registro, regional e situação ativa? Se sim, poderiam informar requisitos de acesso, termos de uso, limites, custos e processo de homologação? Obrigado.
 
 ---
 

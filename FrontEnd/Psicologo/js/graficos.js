@@ -1,73 +1,119 @@
-const emocoes = [
-      { nome: "Feliz",      emoji: "😊", cor: "#4A7C59" },
-      { nome: "Radiante",   emoji: "😁", cor: "#E9B949" },
-      { nome: "Neutro",     emoji: "😐", cor: "#7C8798" },
-      { nome: "Irritado",   emoji: "😠", cor: "#8B2020" },
-      { nome: "Triste",     emoji: "😢", cor: "#3B5EA6" },
-      { nome: "Ansioso",    emoji: "😰", cor: "#D4853A" },
-      { nome: "Estressado", emoji: "😵", cor: "#B05D3B" },
-      { nome: "Depressivo", emoji: "😞", cor: "#596275" },
-      { nome: "Inseguro",   emoji: "😟", cor: "#8A6D3B" },
-      { nome: "Cansado",    emoji: "😴", cor: "#B8860B" },
-      { nome: "Desmotivado",emoji: "😶", cor: "#6B7280" },
-      { nome: "Preocupado", emoji: "😧", cor: "#7B5EA6" },
-    ];
+const API_URL = "https://aflorar-backend.onrender.com";
+const pacienteSelect = document.getElementById("pacienteSelect");
+const statusGrafico = document.getElementById("statusGrafico");
+const tituloGrafico = document.getElementById("tituloGrafico");
+const paleta = ["#4A7C59", "#E9B949", "#7C8798", "#8B2020", "#3B5EA6", "#D4853A", "#B05D3B", "#596275", "#8A6D3B", "#B8860B", "#6B7280", "#7B5EA6"];
+let chartInstance;
+let filtroAtual = "mensal";
 
-    const dados = {
-      mensal:  [18, 14, 10, 9, 8, 11, 7, 5, 6, 5, 4, 3],
-      semanal: [22, 16, 8,  7, 9, 12, 6, 4, 5, 4, 4, 3],
-      diario:  [20, 18, 10, 8, 10, 12, 5, 4, 5, 3, 3, 2],
-    };
+async function requisicaoApi(endpoint) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const resultado = await response.json();
+  if (!response.ok) throw new Error(resultado.erro || "Não foi possível carregar os dados.");
+  return resultado;
+}
 
-    let chartInstance = null;
+function renderGrafico(registros) {
+  const contagem = new Map();
+  registros.forEach((registro) => contagem.set(registro.humor, (contagem.get(registro.humor) || 0) + 1));
+  const labels = [...contagem.keys()];
+  const valores = [...contagem.values()];
+  const legenda = document.getElementById("legenda");
+  legenda.replaceChildren();
 
-    function renderLegenda() {
-      const legenda = document.getElementById("legenda");
-      legenda.innerHTML = emocoes.map(e => `
-        <div class="legenda-item">
-          <div class="legenda-cor" style="background:${e.cor}"></div>
-          <span class="legenda-emoji">${e.emoji}</span>
-          <span>${e.nome}</span>
-        </div>
-      `).join("");
+  labels.forEach((nome, index) => {
+    const item = document.createElement("div");
+    item.className = "legenda-item";
+    const cor = document.createElement("span");
+    cor.className = "legenda-cor";
+    cor.style.background = paleta[index % paleta.length];
+    const texto = document.createElement("span");
+    const registro = registros.find((entrada) => entrada.humor === nome);
+    texto.textContent = `${registro?.emoji || ""} ${nome}: ${valores[index]}`;
+    item.append(cor, texto);
+    legenda.appendChild(item);
+  });
+
+  chartInstance?.destroy();
+  chartInstance = new Chart(document.getElementById("graficoHumor"), {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{
+        data: valores,
+        backgroundColor: labels.map((_, index) => paleta[index % paleta.length]),
+        borderWidth: 2,
+        borderColor: "#fff",
+        hoverOffset: 8,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "55%",
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (context) => ` ${context.label}: ${context.parsed} registro(s)` } },
+      },
+    },
+  });
+}
+
+async function carregarRegistros() {
+  const pacienteId = pacienteSelect.value;
+  if (!pacienteId) return;
+  statusGrafico.textContent = "Carregando registros...";
+  try {
+    const agora = new Date();
+    const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+    const resultado = await requisicaoApi(`/api/psicologo/pacientes/${encodeURIComponent(pacienteId)}/humor?periodo=${filtroAtual}&hoje=${hoje}`);
+    renderGrafico(resultado.registros);
+    statusGrafico.textContent = resultado.registros.length
+      ? `${resultado.registros.length} registro(s) no período.`
+      : "Sem registros de humor neste período.";
+    tituloGrafico.textContent = `Registros de humor · ${pacienteSelect.selectedOptions[0].textContent}`;
+  } catch (error) {
+    statusGrafico.textContent = error.message;
+    renderGrafico([]);
+  }
+}
+
+async function carregarPacientes() {
+  pacienteSelect.replaceChildren();
+  try {
+    const resultado = await requisicaoApi("/api/psicologo/vinculos");
+    const pacientes = resultado.vinculos.filter((vinculo) => vinculo.status === "aceito");
+    pacientes.forEach((vinculo) => {
+      const option = document.createElement("option");
+      option.value = vinculo.paciente_id;
+      option.textContent = vinculo.paciente.nome;
+      pacienteSelect.appendChild(option);
+    });
+
+    const solicitado = new URLSearchParams(location.search).get("pacienteId");
+    if (solicitado && pacientes.some((vinculo) => vinculo.paciente_id === solicitado)) pacienteSelect.value = solicitado;
+    if (!pacientes.length) {
+      statusGrafico.textContent = "Nenhum paciente com vínculo confirmado.";
+      renderGrafico([]);
+      return;
     }
+    await carregarRegistros();
+  } catch (error) {
+    statusGrafico.textContent = error.message;
+    renderGrafico([]);
+  }
+}
 
-    function renderGrafico(filtro) {
-      const ctx = document.getElementById("graficoHumor").getContext("2d");
-      if (chartInstance) chartInstance.destroy();
+function trocarFiltro(filtro, botao) {
+  filtroAtual = filtro;
+  document.querySelectorAll(".btn-filtro").forEach((item) => item.classList.remove("ativo"));
+  botao.classList.add("ativo");
+  carregarRegistros();
+}
 
-      chartInstance = new Chart(ctx, {
-        type: "doughnut",
-        data: {
-          labels: emocoes.map(e => e.nome),
-          datasets: [{
-            data: dados[filtro],
-            backgroundColor: emocoes.map(e => e.cor),
-            borderWidth: 2,
-            borderColor: "#fff",
-            hoverOffset: 10,
-          }]
-        },
-        options: {
-          responsive: true,
-          cutout: "55%",
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: ctx => ` ${ctx.label}: ${ctx.parsed}%`
-              }
-            }
-          }
-        }
-      });
-    }
-
-    function trocarFiltro(filtro, btn) {
-      document.querySelectorAll(".btn-filtro").forEach(b => b.classList.remove("ativo"));
-      btn.classList.add("ativo");
-      renderGrafico(filtro);
-    }
-
-    renderLegenda();
-    renderGrafico("mensal");
+pacienteSelect.addEventListener("change", carregarRegistros);
+carregarPacientes();

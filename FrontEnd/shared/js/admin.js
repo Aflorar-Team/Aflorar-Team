@@ -48,7 +48,6 @@ function criarCardRevisao(cadastro) {
   detalhes.className = "review-details";
   detalhes.append(
     criarCampoResumo("CRP", cadastro.crp),
-    criarCampoResumo("e-Psi informado", cadastro.epsi),
     criarCampoResumo("CPF", cadastro.cpf),
     criarCampoResumo("Telefone", cadastro.telefone),
     criarCampoResumo("Solicitado em", new Date(cadastro.criado_em).toLocaleDateString("pt-BR")),
@@ -58,7 +57,6 @@ function criarCardRevisao(cadastro) {
   verificacoes.className = "review-checks";
   verificacoes.append(
     criarConfirmacao("CRP ativo confirmado no CFP", "registro", cadastro.usuario_id),
-    criarConfirmacao("Cadastro e-Psi conferido", "epsi", cadastro.usuario_id),
     criarConfirmacao("Identidade conferida por videochamada ou serviço apropriado", "identidade", cadastro.usuario_id),
   );
 
@@ -109,7 +107,7 @@ async function revisarCadastro(usuarioId, decisao, card) {
   const checks = [...card.querySelectorAll(`input[data-usuario-id="${usuarioId}"]`)];
   const observacao = card.querySelector(`textarea[data-observacao="${usuarioId}"]`).value.trim();
   if (decisao === "aprovado" && checks.some((check) => !check.checked)) {
-    setStatusAdmin("Confirme CRP, e-Psi e identidade antes de aprovar.", true);
+    setStatusAdmin("Confirme CRP no CFP e a identidade antes de aprovar.", true);
     return;
   }
   if (decisao === "recusado" && !observacao) {
@@ -129,7 +127,6 @@ async function revisarCadastro(usuarioId, decisao, card) {
       body: JSON.stringify({
         decisao,
         registroConferido: checks.find((check) => check.dataset.check === "registro")?.checked === true,
-        epsiConferido: checks.find((check) => check.dataset.check === "epsi")?.checked === true,
         identidadeConferida: checks.find((check) => check.dataset.check === "identidade")?.checked === true,
         observacao,
       }),

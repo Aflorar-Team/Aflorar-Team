@@ -587,6 +587,18 @@
     color: #F4A261;
   }
 
+  .acoes-paciente .acao-paciente {
+    color: #53634b;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .acoes-paciente .acao-paciente:hover {
+    color: #9c4f4f;
+    text-decoration: underline;
+  }
+
   footer {
     text-align: center;
     padding: 15px;
