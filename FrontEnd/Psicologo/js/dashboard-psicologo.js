@@ -33,6 +33,10 @@ function criarElemento(tag, classe, texto) {
   return elemento;
 }
 
+function eventoAindaFuturo(evento) {
+  return new Date(`${evento.data}T${evento.hora.slice(0, 5)}:00`).getTime() >= Date.now();
+}
+
 async function requisicaoApi(endpoint, options = {}) {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
@@ -63,27 +67,67 @@ async function carregarPacientesReais() {
       return;
     }
 
-    pacientes.forEach((vinculo) => {
+    pacientes.forEach((vinculo, indice) => {
+      const paciente = vinculo.paciente;
       const card = criarElemento("article", "card-paciente");
       const topo = criarElemento("div", "topo");
+      const identidade = criarElemento("div", "identidade-paciente");
+      const avatar = criarElemento("div", "avatar-paciente");
+      const iniciais = paciente.nome.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join("").toUpperCase();
+      avatar.appendChild(criarElemento("span", "iniciais-paciente", iniciais || "P"));
+      if (paciente.avatar_url) {
+        const imagem = document.createElement("img");
+        imagem.src = paciente.avatar_url;
+        imagem.alt = `Foto de ${paciente.nome}`;
+        imagem.addEventListener("error", () => imagem.remove(), { once: true });
+        avatar.appendChild(imagem);
+      }
       const info = criarElemento("div", "info-paciente");
-      info.append(
-        criarElemento("span", "tag-nome", vinculo.paciente.nome),
-        criarElemento("span", "tag-horario", "Vínculo confirmado"),
-      );
-      topo.appendChild(info);
+      const nome = criarElemento("span", "tag-nome", paciente.nome);
+      nome.style.backgroundColor = ["#486b53", "#a15356", "#446b82", "#8a6544"][indice % 4];
+      info.append(nome, criarElemento("span", "status-vinculo-paciente", "Vínculo confirmado"));
+      identidade.append(avatar, info);
+      topo.appendChild(identidade);
+
+      const resumo = criarElemento("div", "resumo-agenda-paciente");
+      const eventosFuturos = (paciente.eventos || []).filter(eventoAindaFuturo);
+      const compromisso = eventosFuturos.find((evento) => evento.tipo === "compromisso");
+      const linhaCompromisso = criarElemento("p", "proximo-compromisso");
+      linhaCompromisso.appendChild(criarElemento("strong", "", "Próxima consulta"));
+      linhaCompromisso.appendChild(criarElemento("span", "", compromisso
+        ? `${new Date(`${compromisso.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} às ${compromisso.hora.slice(0, 5)} · ${compromisso.titulo}`
+        : "Nenhuma consulta marcada"));
+      resumo.appendChild(linhaCompromisso);
+
+      const avisos = eventosFuturos.filter((evento) => evento.tipo === "aviso");
+      const secaoAvisos = criarElemento("div", "avisos-paciente");
+      secaoAvisos.appendChild(criarElemento("strong", "", "Avisos e compromissos"));
+      if (!avisos.length) {
+        secaoAvisos.appendChild(criarElemento("p", "sem-avisos", "Nenhum aviso futuro."));
+      } else {
+        const listaAvisos = document.createElement("ul");
+        avisos.slice(0, 3).forEach((aviso) => {
+          const item = document.createElement("li");
+          const dataAviso = new Date(`${aviso.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+          item.textContent = `${dataAviso} · ${aviso.titulo}`;
+          listaAvisos.appendChild(item);
+        });
+        secaoAvisos.appendChild(listaAvisos);
+      }
+      resumo.appendChild(secaoAvisos);
       const acoes = criarElemento("div", "acoes-paciente");
       [
         ["./graficos-pacientes.html", "Gráficos", "📊"],
         ["./anotacoes-psicologo.html", "Notas diárias", "📝"],
         ["./anotacoes-compartilhadas.html", "Jardim compartilhado", "🌿"],
+        ["./agenda-psicologo.html", "Agenda", "📅"],
       ].forEach(([pagina, titulo, icone]) => {
         const link = criarElemento("a", "acao-paciente", `${icone} ${titulo}`);
         link.href = `${pagina}?pacienteId=${encodeURIComponent(vinculo.paciente_id)}`;
-        link.setAttribute("aria-label", `${titulo} de ${vinculo.paciente.nome}`);
+        link.setAttribute("aria-label", `${titulo} de ${paciente.nome}`);
         acoes.appendChild(link);
       });
-      card.append(topo, acoes);
+      card.append(topo, resumo, acoes);
       lista.appendChild(card);
     });
   } catch (error) {

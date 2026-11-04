@@ -11,13 +11,14 @@ const usuario = (() => {
   }
 })();
 
-const chaveAgenda = `aflorar.agenda.${usuario?.id || usuario?.email || "local"}`;
+const API_URL = "https://aflorar-backend.onrender.com";
 const hoje = new Date();
 let mes = hoje.getMonth();
 let ano = hoje.getFullYear();
 let dataSelecionada = formatarData(hoje);
 let tipoAtual = "compromisso";
-let eventos = carregarEventos();
+let eventos = [];
+let pacientesVinculados = [];
 
 const grid = document.getElementById("gridDias");
 const listaEventos = document.getElementById("listaEventos");
@@ -28,6 +29,7 @@ const campoData = document.getElementById("dataEvento");
 const campoHora = document.getElementById("horaEvento");
 const campoDetalhes = document.getElementById("detalhesEvento");
 const campoNotificar = document.getElementById("notificarEvento");
+const campoPacienteEvento = document.getElementById("pacienteEvento");
 
 function formatarData(data) {
   const anoLocal = data.getFullYear();
@@ -36,17 +38,58 @@ function formatarData(data) {
   return `${anoLocal}-${mesLocal}-${diaLocal}`;
 }
 
-function carregarEventos() {
+async function requisicaoApi(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
+  });
+  const resultado = await response.json();
+  if (!response.ok) throw new Error(resultado.erro || "Não foi possível concluir a operação da agenda.");
+  return resultado;
+}
+
+async function carregarEventosMes() {
+  const inicio = formatarData(new Date(ano, mes, 1));
+  const fim = formatarData(new Date(ano, mes + 1, 0));
   try {
-    const salvos = JSON.parse(localStorage.getItem(chaveAgenda) || "[]");
-    return Array.isArray(salvos) ? salvos : [];
-  } catch {
-    return [];
+    const resultado = await requisicaoApi(`/api/psicologo/eventos?inicio=${inicio}&fim=${fim}`);
+    eventos = resultado.eventos;
+    renderizarCalendario();
+    renderizarEventos();
+    verificarAutoavisos();
+  } catch (error) {
+    eventos = [];
+    renderizarCalendario();
+    renderizarEventos();
+    document.getElementById("estadoVazio").textContent = error.message;
+    document.getElementById("estadoVazio").hidden = false;
   }
 }
 
-function salvarEventos() {
-  localStorage.setItem(chaveAgenda, JSON.stringify(eventos));
+async function carregarPacientesVinculados() {
+  try {
+    const resultado = await requisicaoApi("/api/psicologo/vinculos");
+    pacientesVinculados = resultado.vinculos.filter((vinculo) => vinculo.status === "aceito");
+    pacientesVinculados.forEach((vinculo) => {
+      const option = document.createElement("option");
+      option.value = vinculo.paciente_id;
+      option.textContent = vinculo.paciente.nome;
+      campoPacienteEvento.appendChild(option);
+    });
+    const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
+    if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
+      campoPacienteEvento.value = pacienteInicial;
+    }
+  } catch (error) {
+    document.getElementById("estadoVazio").textContent = error.message;
+    document.getElementById("estadoVazio").hidden = false;
+  }
 }
 
 function criarMarcadores(dia, data) {
@@ -57,10 +100,10 @@ function criarMarcadores(dia, data) {
   marcadores.className = "marcadores-dia";
   marcadores.setAttribute("aria-hidden", "true");
 
-  ["compromisso", "autoaviso"].forEach((tipo) => {
+  ["compromisso", "aviso", "autoaviso"].forEach((tipo) => {
     if (!tipos.has(tipo)) return;
     const marcador = document.createElement("i");
-    marcador.className = tipo === "compromisso" ? "marcador-compromisso" : "marcador-autoaviso";
+    marcador.className = `marcador-${tipo}`;
     marcadores.appendChild(marcador);
   });
 
@@ -124,6 +167,7 @@ function renderizarCalendario() {
 }
 
 function renderizarEventos() {
+  document.getElementById("estadoVazio").textContent = "Nenhum item nesta data.";
   const data = new Date(`${dataSelecionada}T12:00:00`);
   document.getElementById("dataSelecionada").textContent = data.toLocaleDateString("pt-BR", {
     dateStyle: "full",
@@ -138,7 +182,7 @@ function renderizarEventos() {
 
   doDia.forEach((evento) => {
     const item = document.createElement("li");
-    item.className = `evento ${evento.tipo === "autoaviso" ? "autoaviso" : "compromisso"}`;
+    item.className = `evento ${evento.tipo}`;
 
     const topo = document.createElement("div");
     topo.className = "evento-topo";
@@ -154,11 +198,17 @@ function renderizarEventos() {
     remover.type = "button";
     remover.textContent = "×";
     remover.setAttribute("aria-label", `Remover ${evento.titulo}`);
-    remover.addEventListener("click", () => {
-      eventos = eventos.filter((itemSalvo) => itemSalvo.id !== evento.id);
-      salvarEventos();
-      renderizarCalendario();
-      renderizarEventos();
+    remover.addEventListener("click", async () => {
+      remover.disabled = true;
+      try {
+        await requisicaoApi(`/api/psicologo/eventos/${encodeURIComponent(evento.id)}`, { method: "DELETE" });
+        eventos = eventos.filter((itemSalvo) => itemSalvo.id !== evento.id);
+        renderizarCalendario();
+        renderizarEventos();
+      } catch (error) {
+        remover.disabled = false;
+        window.alert(error.message);
+      }
     });
     topo.appendChild(remover);
     item.appendChild(topo);
@@ -171,22 +221,11 @@ function renderizarEventos() {
 
     const rotulo = document.createElement("span");
     rotulo.className = "evento-rotulo";
-    rotulo.textContent = evento.tipo === "autoaviso" ? "Autoaviso" : "Compromisso";
+    const tipoEvento = evento.tipo === "autoaviso" ? "Autoaviso" : evento.tipo === "aviso" ? "Aviso" : "Compromisso";
+    rotulo.textContent = evento.paciente_nome ? `${tipoEvento} · ${evento.paciente_nome}` : `${tipoEvento} · Geral`;
     item.appendChild(rotulo);
     listaEventos.appendChild(item);
   });
-}
-
-function abrirDialogo(tipo) {
-  tipoAtual = tipo;
-  formulario.reset();
-  campoData.value = dataSelecionada;
-  document.getElementById("tipoEventoDialogo").textContent = tipo === "autoaviso" ? "LEMBRETE PESSOAL" : "AGENDA";
-  document.getElementById("tituloDialogo").textContent = tipo === "autoaviso" ? "Novo autoaviso" : "Novo compromisso";
-  document.getElementById("opcaoNotificacao").hidden = tipo !== "autoaviso";
-  campoNotificar.checked = tipo === "autoaviso";
-  dialogo.showModal();
-  campoTitulo.focus();
 }
 
 async function solicitarPermissaoNotificacao() {
@@ -202,7 +241,7 @@ function verificarAutoavisos() {
 
   eventos.forEach((evento) => {
     if (evento.tipo !== "autoaviso" || !evento.notificar || evento.notificado) return;
-    const horario = new Date(`${evento.data}T${evento.hora}:00`).getTime();
+    const horario = new Date(`${evento.data}T${evento.hora.slice(0, 5)}:00`).getTime();
     const atraso = agora - horario;
     if (atraso < 0) return;
 
@@ -216,8 +255,7 @@ function verificarAutoavisos() {
     evento.notificado = true;
     alterou = true;
   });
-
-  if (alterou) salvarEventos();
+  if (alterou) renderizarEventos();
 }
 
 document.getElementById("btnAnterior").addEventListener("click", () => {
@@ -227,8 +265,7 @@ document.getElementById("btnAnterior").addEventListener("click", () => {
     ano--;
   }
   dataSelecionada = formatarData(new Date(ano, mes, 1));
-  renderizarCalendario();
-  renderizarEventos();
+  carregarEventosMes();
 });
 
 document.getElementById("btnProximo").addEventListener("click", () => {
@@ -238,42 +275,70 @@ document.getElementById("btnProximo").addEventListener("click", () => {
     ano++;
   }
   dataSelecionada = formatarData(new Date(ano, mes, 1));
-  renderizarCalendario();
-  renderizarEventos();
+  carregarEventosMes();
 });
 
 document.getElementById("btnNovoCompromisso").addEventListener("click", () => abrirDialogo("compromisso"));
+document.getElementById("btnNovoAviso").addEventListener("click", () => abrirDialogo("aviso"));
 document.getElementById("btnNovoAutoaviso").addEventListener("click", () => abrirDialogo("autoaviso"));
 document.getElementById("btnFecharDialogo").addEventListener("click", () => dialogo.close());
 document.getElementById("btnCancelarDialogo").addEventListener("click", () => dialogo.close());
 
+function abrirDialogo(tipo) {
+  tipoAtual = tipo;
+  formulario.reset();
+  campoData.value = dataSelecionada;
+  document.getElementById("tipoEventoDialogo").textContent = tipo === "autoaviso" ? "LEMBRETE PESSOAL" : tipo === "aviso" ? "AVISO" : "AGENDA";
+  document.getElementById("tituloDialogo").textContent = tipo === "autoaviso" ? "Novo autoaviso" : tipo === "aviso" ? "Novo aviso" : "Novo compromisso";
+  document.getElementById("opcaoNotificacao").hidden = tipo !== "autoaviso";
+  document.getElementById("rotuloPacienteEvento").hidden = tipo === "autoaviso";
+  campoPacienteEvento.disabled = tipo === "autoaviso";
+  if (tipo !== "autoaviso") {
+    const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
+    if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
+      campoPacienteEvento.value = pacienteInicial;
+    }
+  }
+  campoNotificar.checked = tipo === "autoaviso";
+  dialogo.showModal();
+  campoTitulo.focus();
+}
+
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
   if (tipoAtual === "autoaviso" && campoNotificar.checked) await solicitarPermissaoNotificacao();
-
-  eventos.push({
-    id: window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-    tipo: tipoAtual,
-    titulo: campoTitulo.value.trim(),
-    data: campoData.value,
-    hora: campoHora.value,
-    detalhes: campoDetalhes.value.trim(),
-    notificar: tipoAtual === "autoaviso" && campoNotificar.checked,
-    notificado: false,
-  });
-
-  dataSelecionada = campoData.value;
-  const data = new Date(`${dataSelecionada}T12:00:00`);
-  mes = data.getMonth();
-  ano = data.getFullYear();
-  salvarEventos();
-  dialogo.close();
-  renderizarCalendario();
-  renderizarEventos();
-  verificarAutoavisos();
+  const botaoSalvar = formulario.querySelector(".botao-salvar");
+  botaoSalvar.disabled = true;
+  try {
+    const resultado = await requisicaoApi("/api/psicologo/eventos", {
+      method: "POST",
+      body: JSON.stringify({
+        tipo: tipoAtual,
+        titulo: campoTitulo.value.trim(),
+        data: campoData.value,
+        hora: campoHora.value,
+        detalhes: campoDetalhes.value.trim(),
+        paciente_id: tipoAtual === "autoaviso" ? null : campoPacienteEvento.value || null,
+        notificar: tipoAtual === "autoaviso" && campoNotificar.checked,
+      }),
+    });
+    dataSelecionada = campoData.value;
+    const data = new Date(`${dataSelecionada}T12:00:00`);
+    mes = data.getMonth();
+    ano = data.getFullYear();
+    dialogo.close();
+    await carregarEventosMes();
+  } catch (error) {
+    window.alert(error.message);
+  } finally {
+    botaoSalvar.disabled = false;
+  }
 });
 
-renderizarCalendario();
-renderizarEventos();
-verificarAutoavisos();
-window.setInterval(verificarAutoavisos, 15000);
+async function iniciarAgenda() {
+  await carregarPacientesVinculados();
+  await carregarEventosMes();
+  window.setInterval(verificarAutoavisos, 15000);
+}
+
+iniciarAgenda();

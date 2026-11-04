@@ -87,8 +87,15 @@ Aflorar/
 ├── BackEnd/
 │   ├── server.js             # entrada compatível com npm start/Render
 │   ├── src/
-│   │   ├── app.js            # Express e rotas da API
+│   │   ├── app.js            # composição do Express e dependências compartilhadas
 │   │   ├── server.js         # inicialização HTTP
+│   │   ├── routes/
+│   │   │   ├── profiles.js       # cadastro, OAuth, login e sessões
+│   │   │   ├── relationships.js  # códigos e vínculos paciente-profissional
+│   │   │   ├── clinical.js       # emoções, anotações e compartilhamentos
+│   │   │   ├── admin.js          # revisão de profissionais
+│   │   │   ├── flora.js          # endpoint da assistente Flora
+│   │   │   └── gardens.js        # canteiros e evoluções do jardim
 │   │   └── config/
 │   │       ├── env.js        # variáveis de ambiente
 │   │       └── supabase.js   # cliente Supabase
@@ -99,7 +106,7 @@ Aflorar/
 └── README.md
 ```
 
-No frontend, cada perfil mantém suas páginas, estilos e scripts próximos. O backend mantém a inicialização e as configurações separadas; as rotas ainda estão reunidas em `src/app.js` e podem ser extraídas por domínio conforme evoluírem.
+No frontend, cada perfil mantém suas páginas, estilos e scripts próximos. No backend, `src/app.js` configura o Express e registra os módulos de rotas por domínio; a entrada HTTP permanece em `src/server.js`.
 
 ---
 
@@ -162,7 +169,7 @@ Abra `http://localhost:3000` no navegador.
 
 ### Papéis de conta e aprovação profissional
 
-Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql`, `BackEnd/migrations/20261104_patient_link_codes.sql` e `BackEnd/migrations/20261104_patient_mood_and_notes.sql` no SQL Editor do Supabase. A migração de códigos adiciona códigos únicos aos pacientes existentes; a migração de humor e anotações habilita notas diárias e limita a leitura das evoluções compartilhadas ao psicólogo vinculado. Configure `ADMIN_EMAIL` no Render com o e-mail verificado que terá acesso ao painel `/admin.html`; o administrador entra com Google. Novos pacientes recebem o papel pelo backend; psicólogos ficam pendentes até revisão manual. No painel, confira o CRP no Cadastro Nacional do CFP e confirme a identidade por um canal confiável; a busca pública sozinha não prova identidade. O backend registra a decisão em `app_metadata` e na tabela `psicologos`.
+Após aplicar o schema principal, execute `BackEnd/migrations/20261103_secure_role_policies.sql`, `BackEnd/migrations/20261104_patient_link_codes.sql`, `BackEnd/migrations/20261104_patient_mood_and_notes.sql` e `BackEnd/migrations/20261104_agenda_patient_events.sql` no SQL Editor do Supabase. As migrações adicionam códigos únicos, notas diárias, acesso restrito a evoluções compartilhadas e suporte a avisos associados a pacientes na agenda. Configure `ADMIN_EMAIL` no Render com o e-mail verificado que terá acesso ao painel `/admin.html`; o administrador entra com Google. Novos pacientes recebem o papel pelo backend; psicólogos ficam pendentes até revisão manual. No painel, confira o CRP no Cadastro Nacional do CFP e confirme a identidade por um canal confiável; a busca pública sozinha não prova identidade. O backend registra a decisão em `app_metadata` e na tabela `psicologos`.
 
 Contas de pacientes criadas antes desta mudança precisam receber `paciente` em `app_metadata.roles` por uma migração administrativa após conferência. Psicólogos antigos não devem receber o papel automaticamente: devem completar os dados novamente para entrar na fila `/admin.html` e passar pela mesma revisão. Não copie papéis de `user_metadata`, pois esse campo pode ser editado pelo próprio usuário.
 

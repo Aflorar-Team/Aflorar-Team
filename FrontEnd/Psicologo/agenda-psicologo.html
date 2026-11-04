@@ -47,6 +47,7 @@
         <div class="grid-dias" id="gridDias"></div>
         <div class="legenda-agenda" aria-label="Legenda dos marcadores">
           <span><i class="marcador-compromisso"></i> Compromisso</span>
+          <span><i class="marcador-aviso"></i> Aviso</span>
           <span><i class="marcador-autoaviso"></i> Autoaviso</span>
         </div>
       </section>
@@ -59,6 +60,9 @@
         <div class="acoes-agenda">
           <button id="btnNovoCompromisso" class="botao botao-compromisso" type="button">
             <span aria-hidden="true">+</span> Compromisso
+          </button>
+          <button id="btnNovoAviso" class="botao botao-aviso" type="button">
+            <span aria-hidden="true">+</span> Aviso
           </button>
           <button id="btnNovoAutoaviso" class="botao botao-autoaviso" type="button">
             <span aria-hidden="true">+</span> Autoaviso
@@ -80,6 +84,11 @@
         </div>
         <button id="btnFecharDialogo" class="botao-fechar" type="button" aria-label="Fechar">&times;</button>
       </div>
+
+      <label id="rotuloPacienteEvento" for="pacienteEvento">Para</label>
+      <select id="pacienteEvento" name="paciente_id">
+        <option value="">Geral</option>
+      </select>
 
       <label for="tituloEvento">Título</label>
       <input id="tituloEvento" name="titulo" type="text" maxlength="90" required
