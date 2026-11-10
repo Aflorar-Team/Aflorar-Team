@@ -2,49 +2,61 @@
 <html lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Flora - Chat</title>
-  <link rel="stylesheet" href="../shared/css/chat.css" />
-  <link rel="stylesheet" href="./css/dashboard.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversas com pacientes - Aflorar</title>
+  <link rel="stylesheet" href="./css/dashboard.css">
+  <link rel="stylesheet" href="../shared/css/private-chat.css">
 </head>
 
-<body>
+<body class="private-chat-page" data-chat-role="psicologo">
   <header class="navbar">
     <div class="logo">✿ Aflorar</div>
-    <nav class="menu">
-      <a href="./dashboard-psicologo.html" class="active">
-        <span class="icon">🏠</span> Início
-      </a>
-      <a href="./agenda-psicologo.html">
-        <span class="icon">📅</span> Agenda
-      </a>
+    <nav class="menu" aria-label="Navegação principal">
+      <a href="./dashboard-psicologo.html"><span class="icon">🏠</span> Início</a>
+      <a href="./chat-psicologo.html" class="active" aria-current="page"><span class="icon">💬</span> Mensagens</a>
+      <a href="./agenda-psicologo.html"><span class="icon">📅</span> Agenda</a>
     </nav>
-    <div></div>
+    <a href="./configuracoes.html" aria-label="Ir para configurações">
+      <img class="foto-psicologo" src="https://randomuser.me/api/portraits/women/45.jpg" alt="">
+    </a>
   </header>
 
-  <main class="chat-container">
-    <h2>Converse com seu paciente</h2>
-
-    <!-- Área de mensagens -->
-    <div class="chat-box" id="chatBox">
-      <div class="message bot">
-        <span class="avatar"> 👤</span>
-        <p>
-          Olá! Sou o seu paciente e preciso de auxílio nesse momento...
-        </p>
+  <main class="private-chat-main" id="privateChat" data-active="false">
+    <aside class="chat-sidebar" aria-label="Lista de conversas">
+      <div class="chat-sidebar-heading">
+        <h1>Mensagens</h1>
+        <p>Pacientes com vínculo aceito</p>
       </div>
-    </div>
+      <div class="chat-search-wrap">
+        <label class="sr-only" for="chatSearch">Buscar paciente</label>
+        <input class="chat-search" id="chatSearch" type="search" placeholder="Buscar paciente">
+      </div>
+      <div class="chat-contact-list" id="chatContactList" aria-live="polite">
+        <p class="chat-list-state">Carregando conversas...</p>
+      </div>
+    </aside>
 
-    <!-- Input -->
-    <div class="chat-input">
-      <input type="text" id="userInput" placeholder="Digite sua mensagem..." />
-      <button id="sendBtn">➤</button>
-    </div>
+    <section class="chat-conversation" aria-label="Conversa selecionada">
+      <header class="chat-conversation-heading">
+        <button class="chat-back" id="chatBack" type="button" aria-label="Voltar para a lista">‹</button>
+        <div class="chat-conversation-identity" id="chatConversationIdentity">
+          <div class="chat-conversation-copy">
+            <h2 id="chatConversationName">Suas conversas</h2>
+            <p id="chatConversationStatus">Selecione um paciente na lateral</p>
+          </div>
+        </div>
+      </header>
+      <div class="chat-messages" id="chatMessages" aria-live="polite" aria-relevant="additions text"></div>
+      <p class="chat-status" id="chatStatus" role="status"></p>
+      <form class="chat-compose" id="chatCompose">
+        <label class="sr-only" for="chatMessageInput">Escreva sua mensagem</label>
+        <textarea id="chatMessageInput" name="conteudo" maxlength="2000" rows="1" placeholder="Escreva uma mensagem..." disabled required></textarea>
+        <button id="chatSend" type="submit" aria-label="Enviar mensagem" disabled>➤</button>
+      </form>
+    </section>
   </main>
-
-  <footer>© 2025 Aflorar. Todos os direitos reservados.</footer>
-
+  <script src="../shared/js/private-chat.js"></script>
 </body>
 
 </html>

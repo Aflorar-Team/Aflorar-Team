@@ -20,6 +20,7 @@ import { registerClinicalRoutes } from "./routes/clinical.js";
 import { registerAdminRoutes } from "./routes/admin.js";
 import { registerFloraRoutes } from "./routes/flora.js";
 import { registerGardenRoutes } from "./routes/gardens.js";
+import { registerConversationRoutes } from "./routes/conversations.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -414,6 +415,7 @@ registerFloraRoutes(app, { GEMINI_API_KEY, fetch });
 registerGardenRoutes(app, {
   autenticarUsuario, supabase, criarClienteAdmin, getJardinsFallback, setJardinsFallback,
 });
+registerConversationRoutes(app, { autenticarUsuario, criarClienteAdmin });
 
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError && error.status === 400 && "body" in error) {

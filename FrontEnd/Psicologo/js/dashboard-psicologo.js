@@ -292,14 +292,16 @@ function renderizarDemandas() {
 
 function renderizarMensagens() {
   const estado = criarElemento("div", "estado-mensagens");
-  estado.appendChild(criarElemento("span", "icone-estado", "…"));
-  estado.appendChild(criarElemento("h5", "", "Nenhuma mensagem disponível"));
+  estado.appendChild(criarElemento("span", "icone-estado", "💬"));
+  estado.appendChild(criarElemento("h5", "", "Converse com seus pacientes"));
   estado.appendChild(criarElemento(
     "p",
     "",
-    "As mensagens enviadas pelos pacientes ainda não são armazenadas nem compartilhadas com esta área. O chat existente atende conversas com a Flora IA."
+    "As conversas com vínculo aceito ficam organizadas por paciente."
   ));
-  estado.appendChild(criarElemento("p", "nota-integracao", "Quando o chat entre paciente e psicólogo estiver conectado ao sistema, as conversas mais recentes aparecerão aqui."));
+  const abrirChat = criarElemento("a", "link-popup", "Abrir mensagens");
+  abrirChat.href = "./chat-psicologo.html";
+  estado.appendChild(abrirChat);
   popupConteudo.replaceChildren(estado);
 }
 
