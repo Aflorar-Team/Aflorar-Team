@@ -80,6 +80,7 @@ async function ensureJardinsTable() {
       nome text NOT NULL,
       nivel integer NOT NULL DEFAULT 1,
       posicao integer NOT NULL DEFAULT 0,
+      semente text NOT NULL DEFAULT 'girassol',
       created_at timestamptz NOT NULL DEFAULT now(),
       updated_at timestamptz NOT NULL DEFAULT now()
     );

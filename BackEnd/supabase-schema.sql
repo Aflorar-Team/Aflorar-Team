@@ -199,6 +199,7 @@ CREATE TABLE IF NOT EXISTS public.jardins (
   nome text NOT NULL,
   nivel integer NOT NULL DEFAULT 1 CHECK (nivel BETWEEN 1 AND 5),
   posicao integer NOT NULL DEFAULT 0 CHECK (posicao BETWEEN 0 AND 6),
+  semente text NOT NULL DEFAULT 'girassol' CHECK (semente IN ('girassol', 'rosa', 'lavanda', 'flor-luz')),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );

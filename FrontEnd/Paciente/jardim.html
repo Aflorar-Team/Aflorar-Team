@@ -135,7 +135,7 @@
       </div>
 
       <div class="field" id="field-nivel" style="display:none;">
-        <label>Nível do canteiro</label>
+        <label>Estágio da flor</label>
         <div class="level-picker" id="level-picker">
           <div class="level-star" data-level="1">1</div>
           <div class="level-star" data-level="2">2</div>
@@ -162,16 +162,7 @@
       <div class="evolution-details" id="evolution-details">
         <div class="plant-portrait">
           <span class="plant-portrait-name" id="plant-portrait-name"></span>
-          <svg class="plant-illustration" viewBox="0 0 180 190" role="img"
-            aria-label="Ilustração de uma planta crescendo">
-            <ellipse cx="90" cy="164" rx="64" ry="15" fill="#4C2E1A" />
-            <path d="M36 147h108l-12 38H48z" fill="#C47D4E" />
-            <path d="M40 147h100l-5 13H45z" fill="#E6A06A" />
-            <path d="M90 147V82" fill="none" stroke="#648B46" stroke-width="7" stroke-linecap="round" />
-            <path d="M89 112c-24 1-37-13-33-34 21 1 34 12 33 34Z" fill="#86A957" />
-            <path d="M92 97c1-22 15-35 35-32-1 21-13 34-35 32Z" fill="#A7BE69" />
-            <path d="M89 83c-17-12-17-29-4-42 16 13 17 29 4 42Z" fill="#CBD36E" />
-          </svg>
+          <img class="plant-illustration" id="plant-illustration" alt="">
           <p class="plant-portrait-level" id="plant-portrait-level"></p>
         </div>
 
@@ -230,7 +221,7 @@
     </section>
   </div>
 
-  <!-- Side card (Loja / Cofre / Config placeholders) -->
+  <!-- Loja de sementes, cofre e configurações -->
   <div class="side-card" id="side-card">
     <div class="close-card" id="close-card">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -238,7 +229,7 @@
       </svg>
     </div>
     <h3 id="side-card-title">Título</h3>
-    <p id="side-card-body">Conteúdo em breve.</p>
+    <div id="side-card-body">Conteúdo em breve.</div>
   </div>
 
   <div class="toast" id="toast"></div>

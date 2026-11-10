@@ -2,6 +2,14 @@
   "use strict";
 
   const TOTAL_SLOTS = 6; // 3x2 grid, last slot can be the "+" button
+  const SEED_INVENTORY_KEY = "aflorar_sementes_v1";
+  const STAGE_NAMES = ["Broto", "Muda", "Botão", "Florescendo", "Flor aberta"];
+  const SEEDS = [
+    { id: "girassol", nome: "Girassol", descricao: "Uma flor cheia de luz." },
+    { id: "rosa", nome: "Rosa", descricao: "Uma rosa que floresce aos poucos." },
+    { id: "lavanda", nome: "Lavanda", descricao: "Raminhos roxos e delicados." },
+    { id: "flor-luz", nome: "Flor-luz", descricao: "Uma flor clara e especial." },
+  ];
 
   // ---------- estado ----------
   let usuarioSessao = null;
@@ -17,6 +25,7 @@
   let evolucoesAtuais = [];
   let editingId = null; // null = criando novo
   let plantaSelecionada = null;
+  let sementeSelecionada = null;
   let voltarParaEvolucao = false;
 
   // ---------- elementos ----------
@@ -70,20 +79,44 @@
     return html;
   }
 
-  function planterSVG() {
-    return `
-      <svg viewBox="0 0 170 88">
-        <defs>
-          <linearGradient id="boxFront" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--canteiro-claro)"/>
-            <stop offset="100%" stop-color="var(--canteiro)"/>
-          </linearGradient>
-        </defs>
-        <polygon points="10,28 160,28 145,84 25,84" fill="url(#boxFront)"/>
-        <polygon points="10,28 160,28 150,12 20,12" fill="var(--canteiro-claro)"/>
-        <polygon points="20,12 150,12 145,28 25,28" fill="var(--canteiro-escuro)" opacity="0.55"/>
-      </svg>
-    `;
+  function getSeed(seedId) {
+    return SEEDS.find(seed => seed.id === seedId) || SEEDS[0];
+  }
+
+  function getGrowthStage(canteiro) {
+    const level = Number(canteiro.nivel) || 1;
+    return Math.max(1, Math.min(5, Math.floor(level)));
+  }
+
+  function getFlowerSprite(seedId, stage) {
+    return `./assets/flores/${getSeed(seedId).id}/estagio-${stage}.png`;
+  }
+
+  function loadSeedInventory() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SEED_INVENTORY_KEY) || "{}");
+      const inventory = saved[usuarioId];
+      return Object.fromEntries(SEEDS.map(seed => [
+        seed.id,
+        Math.max(0, Number(inventory?.[seed.id]) || 0),
+      ]));
+    } catch (error) {
+      console.error("Não foi possível ler o inventário de sementes:", error);
+      return Object.fromEntries(SEEDS.map(seed => [seed.id, 0]));
+    }
+  }
+
+  function saveSeedInventory(inventory) {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SEED_INVENTORY_KEY) || "{}");
+      saved[usuarioId] = inventory;
+      localStorage.setItem(SEED_INVENTORY_KEY, JSON.stringify(saved));
+      return true;
+    } catch (error) {
+      console.error("Não foi possível salvar o inventário de sementes:", error);
+      showToast("Não foi possível salvar suas sementes neste navegador.", "error");
+      return false;
+    }
   }
 
   // ---------- render ----------
@@ -100,14 +133,17 @@
         const el = document.createElement("div");
         el.className = "planter";
         el.dataset.id = canteiro.id;
+        const stage = getGrowthStage(canteiro);
+        const seed = getSeed(canteiro.semente);
         el.innerHTML = `
-          <div class="planter-box">${planterSVG()}</div>
+          <div class="planter-box"><img class="planter-sprite" src="${getFlowerSprite(seed.id, stage)}" alt=""></div>
           <div class="planter-name">${escapeHTML(canteiro.nome)}</div>
           <div class="planter-level">${levelStarsSVG(canteiro.nivel || 1)}</div>
+          <span class="planter-stage">${STAGE_NAMES[stage - 1]}</span>
         `;
         el.setAttribute("role", "button");
         el.setAttribute("tabindex", "0");
-        el.setAttribute("aria-label", `Ver evoluções de ${canteiro.nome}`);
+        el.setAttribute("aria-label", `Ver ${canteiro.nome}, ${STAGE_NAMES[stage - 1]}`);
         el.addEventListener("click", () => abrirEvolucoes(canteiro));
         el.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -122,7 +158,16 @@
           const addBtn = document.createElement("div");
           addBtn.className = "add-plot";
           addBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>`;
+          addBtn.setAttribute("role", "button");
+          addBtn.setAttribute("tabindex", "0");
+          addBtn.setAttribute("aria-label", "Plantar uma semente");
           addBtn.addEventListener("click", () => openCreateModal(pos));
+          addBtn.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openCreateModal(pos);
+            }
+          });
           slot.appendChild(addBtn);
         }
       }
@@ -187,8 +232,13 @@
 
   async function abrirEvolucoes(canteiro) {
     plantaSelecionada = canteiro;
+    const stage = getGrowthStage(canteiro);
+    const seed = getSeed(canteiro.semente);
     document.getElementById("plant-portrait-name").textContent = canteiro.nome;
-    document.getElementById("plant-portrait-level").textContent = `Nível ${canteiro.nivel || 1}`;
+    const plantIllustration = document.getElementById("plant-illustration");
+    plantIllustration.src = getFlowerSprite(seed.id, stage);
+    plantIllustration.alt = `${seed.nome} no estágio ${stage}: ${STAGE_NAMES[stage - 1]}`;
+    document.getElementById("plant-portrait-level").textContent = `Estágio ${stage} de 5 · ${STAGE_NAMES[stage - 1]}`;
     document.getElementById("compose-plant-name").textContent = canteiro.nome;
     evolutionTitle.textContent = canteiro.nome;
     evolutionList.replaceChildren();
@@ -276,14 +326,44 @@
       if (!response.ok) throw new Error(payload.erro || "Não foi possível salvar a evolução.");
       evolucoesAtuais = [payload.evolucao, ...evolucoesAtuais];
       desenharEvolucoes();
+      const estagioSalvo = await avancarEstagio(plantaSelecionada);
       evolutionCompose.hidden = true;
       evolutionDetails.hidden = false;
-      showToast("Evolução registrada!", "success");
+      showToast(
+        estagioSalvo ? "Evolução registrada!" : "Registro salvo. O estágio ficou salvo apenas neste navegador.",
+        estagioSalvo ? "success" : "error"
+      );
     } catch (error) {
       console.error("Não foi possível salvar a evolução:", error);
       evolutionFormError.textContent = error.message || "Não foi possível salvar a evolução.";
     }
   });
+
+  async function avancarEstagio(canteiro) {
+    const nivelAtual = getGrowthStage(canteiro);
+    if (nivelAtual >= 5) return true;
+
+    const novoNivel = nivelAtual + 1;
+    canteiro.nivel = novoNivel;
+    let estagioSalvo = true;
+    try {
+      const atualizado = await atualizarCanteiro(canteiro.id, { nivel: novoNivel });
+      canteiro.nivel = Number(atualizado.canteiro?.nivel) || novoNivel;
+    } catch (error) {
+      console.error("O registro foi salvo, mas o estágio não foi atualizado no servidor:", error);
+      estagioSalvo = false;
+    }
+
+    saveLocalGarden(canteiros);
+    const stage = getGrowthStage(canteiro);
+    const seed = getSeed(canteiro.semente);
+    const plantIllustration = document.getElementById("plant-illustration");
+    plantIllustration.src = getFlowerSprite(seed.id, stage);
+    plantIllustration.alt = `${seed.nome} no estágio ${stage}: ${STAGE_NAMES[stage - 1]}`;
+    document.getElementById("plant-portrait-level").textContent = `Estágio ${stage} de 5 · ${STAGE_NAMES[stage - 1]}`;
+    renderGrid();
+    return estagioSalvo;
+  }
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && evolutionBackdrop.classList.contains("show")) fecharEvolucoes();
   });
@@ -385,7 +465,15 @@
         throw new Error(payload.erro || "Erro ao carregar jardim");
       }
 
-      canteiros = Array.isArray(payload.canteiros) ? payload.canteiros : [];
+      const localCanteiros = new Map(loadLocalGarden().map(canteiro => [String(canteiro.id), canteiro]));
+      canteiros = (Array.isArray(payload.canteiros) ? payload.canteiros : []).map(canteiro => {
+        const local = localCanteiros.get(String(canteiro.id));
+        return {
+          ...local,
+          ...canteiro,
+          semente: canteiro.semente || local?.semente || "girassol",
+        };
+      });
       saveLocalGarden(canteiros);
       renderGrid();
       console.log("[jardim.js] Jardim carregado com sucesso:", canteiros.length, "canteiros");
@@ -420,7 +508,8 @@
   }
   async function criarCanteiro(
     nome,
-    posicao
+    posicao,
+    semente
   ) {
 
     const response = await apiRequest("/api/jardins", {
@@ -432,7 +521,8 @@
         usuario_id: usuarioId,
         nome,
         nivel: 1,
-        posicao
+        posicao,
+        semente
       })
     });
 
@@ -492,24 +582,48 @@
   }
 
   // ---------- modal ----------
-  function openCreateModal(posicao) {
+  function openCreateModal(posicao, sementeId) {
+    if (posicao === null || posicao === undefined) {
+      showToast("Seu jardim está cheio. Libere um espaço para plantar.", "error");
+      return;
+    }
+
+    const inventory = loadSeedInventory();
+    const sementesDisponiveis = SEEDS.filter(seed => inventory[seed.id] > 0);
+    if (!sementeId) {
+      if (sementesDisponiveis.length !== 1) {
+        openSeedShop();
+        showToast(sementesDisponiveis.length ? "Escolha qual semente você quer plantar." : "Pegue uma semente na loja antes de plantar.");
+        return;
+      }
+      sementeId = sementesDisponiveis[0].id;
+    }
+    if (!inventory[sementeId]) {
+      openSeedShop();
+      showToast("Pegue essa semente na loja antes de plantar.", "error");
+      return;
+    }
+
+    sementeSelecionada = sementeId;
     editingId = null;
     modalTitle.textContent = "Novo canteiro";
-    modalSub.textContent = "Dê um nome para o seu novo canteiro 🌱";
+    modalSub.textContent = `Semente de ${getSeed(sementeId).nome}. Dê um nome para o canteiro 🌱`;
     inputNome.value = "";
     fieldNivel.style.display = "none";
     btnSave.textContent = "Criar";
     btnDelete.hidden = true;
     modalError.classList.remove("show");
     modalBackdrop.dataset.posicao = posicao;
+    sideCard.classList.remove("show");
     modalBackdrop.classList.add("show");
     setTimeout(() => inputNome.focus(), 200);
   }
 
   function openEditModal(canteiro) {
+    sementeSelecionada = null;
     editingId = canteiro.id;
     modalTitle.textContent = "Editar canteiro";
-    modalSub.textContent = "Atualize o nome e o nível do seu canteiro";
+    modalSub.textContent = "Atualize o nome ou o estágio de crescimento da flor";
     inputNome.value = canteiro.nome;
     fieldNivel.style.display = "block";
     selectLevel(canteiro.nivel || 1);
@@ -523,6 +637,7 @@
   function closeModal() {
     modalBackdrop.classList.remove("show");
     editingId = null;
+    sementeSelecionada = null;
   }
 
   function selectLevel(n) {
@@ -573,12 +688,30 @@
         showToast("Canteiro atualizado!", "success");
       } else {
         const posicao = Number(modalBackdrop.dataset.posicao);
-        const criado = await criarCanteiro(nome, posicao);
+        const inventory = loadSeedInventory();
+        const semente = sementeSelecionada;
+        if (!semente || inventory[semente] < 1) {
+          throw new Error("Pegue uma semente na loja antes de plantar.");
+        }
+        inventory[semente] -= 1;
+        if (!saveSeedInventory(inventory)) {
+          throw new Error("Não foi possível reservar a semente no seu inventário.");
+        }
+
+        let criado;
+        try {
+          criado = await criarCanteiro(nome, posicao, semente);
+        } catch (error) {
+          inventory[semente] += 1;
+          saveSeedInventory(inventory);
+          throw error;
+        }
         const novo = criado.canteiro || criado;
         canteiros.push({
           id: novo.id,
           usuario_id: usuarioId,
           nome,
+          semente: novo.semente || semente,
           nivel: typeof novo.nivel === "number" ? novo.nivel : 1,
           posicao: typeof novo.posicao === "number" ? novo.posicao : posicao
         });
@@ -644,18 +777,112 @@
   }
 
   // ---------- side cards ----------
-  const cardContent = {
-    loja: { title: "Loja", body: "Em breve você poderá comprar sementes, adubos e decorações para o seu jardim aqui." },
-    cofre: { title: "Cofre", body: "Guarde suas sementes e itens especiais. Em breve." },
-    config: { title: "Configurações", body: "Ajustes de conta, notificações e preferências. Em breve." }
-  };
+  function openSeedShop() {
+    const inventory = loadSeedInventory();
+    const hasFreeSlot = getNextAvailablePosition() !== null;
+    sideCardTitle.textContent = "Loja de sementes";
+    sideCardBody.replaceChildren();
+
+    const intro = document.createElement("p");
+    intro.className = "seed-shop-intro";
+    intro.textContent = "Pegue uma semente para adicionar ao seu inventário. Depois, escolha onde e como plantar.";
+    sideCardBody.appendChild(intro);
+
+    const products = document.createElement("div");
+    products.className = "seed-products";
+    for (const seed of SEEDS) {
+      const card = document.createElement("article");
+      card.className = "seed-product";
+
+      const image = document.createElement("img");
+      image.src = `./assets/sementes/${seed.id}.png`;
+      image.alt = `Semente de ${seed.nome}`;
+      card.appendChild(image);
+
+      const details = document.createElement("div");
+      const name = document.createElement("h4");
+      name.textContent = seed.nome;
+      const description = document.createElement("p");
+      description.textContent = seed.descricao;
+      const quantity = document.createElement("div");
+      quantity.className = "seed-product-quantity";
+      quantity.textContent = `No inventário: ${inventory[seed.id]}`;
+      details.append(name, description, quantity);
+      card.appendChild(details);
+
+      const actions = document.createElement("div");
+      actions.className = "seed-product-actions";
+      const collectButton = document.createElement("button");
+      collectButton.type = "button";
+      collectButton.textContent = "Pegar semente";
+      collectButton.addEventListener("click", () => {
+        const updatedInventory = loadSeedInventory();
+        updatedInventory[seed.id] += 1;
+        if (saveSeedInventory(updatedInventory)) {
+          showToast(`Semente de ${seed.nome} adicionada ao inventário!`, "success");
+          openSeedShop();
+        }
+      });
+      actions.appendChild(collectButton);
+
+      if (inventory[seed.id] > 0) {
+        const plantButton = document.createElement("button");
+        plantButton.type = "button";
+        plantButton.className = "secondary";
+        plantButton.textContent = "Plantar";
+        plantButton.disabled = !hasFreeSlot;
+        plantButton.addEventListener("click", () => openCreateModal(getNextAvailablePosition(), seed.id));
+        actions.appendChild(plantButton);
+      }
+
+      card.appendChild(actions);
+      products.appendChild(card);
+    }
+    sideCardBody.appendChild(products);
+    sideCard.classList.add("show");
+  }
+
+  function openSeedVault() {
+    const inventory = loadSeedInventory();
+    sideCardTitle.textContent = "Cofre de sementes";
+    sideCardBody.replaceChildren();
+
+    const products = document.createElement("div");
+    products.className = "seed-products";
+    for (const seed of SEEDS) {
+      const item = document.createElement("article");
+      item.className = "seed-product";
+      const image = document.createElement("img");
+      image.src = `./assets/sementes/${seed.id}.png`;
+      image.alt = "";
+      const details = document.createElement("div");
+      const name = document.createElement("h4");
+      name.textContent = seed.nome;
+      const quantity = document.createElement("p");
+      quantity.className = "seed-product-quantity";
+      quantity.textContent = `${inventory[seed.id]} semente(s)`;
+      details.append(name, quantity);
+      item.append(image, details);
+      products.appendChild(item);
+    }
+    sideCardBody.appendChild(products);
+    sideCard.classList.add("show");
+  }
 
   document.querySelectorAll(".side-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const key = btn.dataset.card;
-      const content = cardContent[key] || { title: "", body: "" };
-      sideCardTitle.textContent = content.title;
-      sideCardBody.textContent = content.body;
+      if (key === "loja") {
+        openSeedShop();
+        return;
+      }
+      if (key === "cofre") {
+        openSeedVault();
+        return;
+      }
+
+      sideCardTitle.textContent = "Configurações";
+      sideCardBody.textContent = "Ajustes de conta, notificações e preferências. Em breve.";
       sideCard.classList.add("show");
     });
   });

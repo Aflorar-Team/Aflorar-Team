@@ -1,5 +1,6 @@
 export function registerGardenRoutes(app, dependencies) {
   const { autenticarUsuario, supabase, criarClienteAdmin, getJardinsFallback, setJardinsFallback } = dependencies;
+  const sementesValidas = new Set(["girassol", "rosa", "lavanda", "flor-luz"]);
 
   app.get("/api/jardins", async (req, res) => {
     const autenticacao = await autenticarUsuario(req, "paciente");
@@ -43,10 +44,13 @@ export function registerGardenRoutes(app, dependencies) {
   app.post("/api/jardins", async (req, res) => {
     const autenticacao = await autenticarUsuario(req, "paciente");
     if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
-    const { usuario_id, nome, posicao, nivel = 1 } = req.body;
+    const { usuario_id, nome, posicao, nivel = 1, semente = "girassol" } = req.body;
 
     if (usuario_id !== autenticacao.user.id || !nome || posicao === undefined) {
       return res.status(400).json({ erro: "usuario_id, nome e posicao são obrigatórios." });
+    }
+    if (!sementesValidas.has(semente)) {
+      return res.status(400).json({ erro: "Escolha uma semente válida antes de plantar." });
     }
 
     if (!supabase) {
@@ -57,6 +61,7 @@ export function registerGardenRoutes(app, dependencies) {
         nome,
         nivel: Number(nivel) || 1,
         posicao: Number(posicao),
+        semente,
       };
       setJardinsFallback(usuario_id, [...canteiros, novoCanteiro]);
       return res.status(201).json({ canteiro: novoCanteiro });
@@ -71,6 +76,7 @@ export function registerGardenRoutes(app, dependencies) {
             nome,
             nivel: Number(nivel) || 1,
             posicao: Number(posicao),
+            semente,
           },
         ])
         .select()
@@ -94,6 +100,7 @@ export function registerGardenRoutes(app, dependencies) {
           nome,
           nivel: Number(nivel) || 1,
           posicao: Number(posicao),
+          semente,
         };
         setJardinsFallback(usuario_id, [...canteiros, novoCanteiro]);
         return res.status(201).json({ canteiro: novoCanteiro, aviso: "Tabela public.jardins ausente. Verifique o schema do Supabase." });
@@ -106,6 +113,7 @@ export function registerGardenRoutes(app, dependencies) {
         nome,
         nivel: Number(nivel) || 1,
         posicao: Number(posicao),
+        semente,
       };
       setJardinsFallback(usuario_id, [...canteiros, novoCanteiro]);
       return res.status(201).json({ canteiro: novoCanteiro });
