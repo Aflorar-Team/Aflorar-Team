@@ -254,6 +254,11 @@ export function registerRelationshipRoutes(app, dependencies) {
       .order("hora", { ascending: true });
     if (error) {
       console.error("Erro ao carregar agenda do psicólogo:", error);
+      if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error.code)) {
+        return res.status(503).json({
+          erro: "O banco ainda não está com a estrutura atualizada da agenda. Aplique a migração 20261114_agenda_schema_repair.sql no Supabase.",
+        });
+      }
       return res.status(500).json({ erro: "Não foi possível carregar a agenda." });
     }
 
