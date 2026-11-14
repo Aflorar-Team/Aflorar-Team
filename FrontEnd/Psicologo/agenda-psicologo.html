@@ -88,10 +88,23 @@
         <button id="btnFecharDialogo" class="botao-fechar" type="button" aria-label="Fechar">&times;</button>
       </div>
 
-      <label id="rotuloPacienteEvento" for="pacienteEvento">Para</label>
-      <select id="pacienteEvento" name="paciente_id">
-        <option value="">Geral</option>
-      </select>
+      <div id="destinoEventoContainer">
+        <label for="destinoEvento">Para</label>
+        <select id="destinoEvento" name="destino">
+          <option value="geral">Geral</option>
+          <option value="paciente">Paciente</option>
+        </select>
+      </div>
+
+      <div id="selecaoPacienteEvento" hidden>
+        <label for="pacienteEvento">Qual paciente?</label>
+        <select id="pacienteEvento" name="paciente_id" disabled>
+          <option value="">Selecione um paciente</option>
+        </select>
+        <p id="avisoSemPacientes" class="ajuda-campo" hidden>
+          Nenhum paciente vinculado foi encontrado.
+        </p>
+      </div>
 
       <label for="tituloEvento">Título</label>
       <input id="tituloEvento" name="titulo" type="text" maxlength="90" required
