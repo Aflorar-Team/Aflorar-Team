@@ -186,7 +186,14 @@ export function registerRelationshipRoutes(app, dependencies) {
       const avatarUrl = metadata.avatar_url || metadata.picture || null;
       if (avatarUrl) usuariosPorId.set(id, { ...usuariosPorId.get(id), avatar_url: avatarUrl });
     }));
-    const hoje = new Date().toISOString().slice(0, 10);
+    const partesData = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Recife",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const dataLocal = Object.fromEntries(partesData.map(({ type, value }) => [type, value]));
+    const hoje = `${dataLocal.year}-${dataLocal.month}-${dataLocal.day}`;
     const { data: eventosFuturos, error: erroEventos } = idsPacientes.length
       ? await admin.from("eventos_agenda")
         .select("id, paciente_id, tipo, titulo, data_evento, hora, detalhes")

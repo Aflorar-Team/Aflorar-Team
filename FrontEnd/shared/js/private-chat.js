@@ -43,6 +43,8 @@
   let messageIds = new Set();
   let hasLoadedMessages = false;
   let messageRequestSequence = 0;
+  const pacienteInicial = new URLSearchParams(window.location.search).get("pacienteId");
+  let pacienteInicialAberto = false;
 
   async function api(endpoint, options = {}) {
     const token = localStorage.getItem("token");
@@ -289,6 +291,14 @@
           renderEmptyMessages("Selecione uma conversa", "Seus contatos com vínculo aceito aparecem na lateral.");
         } else {
           selectedContact = { ...selectedContact, ...atualizado };
+        }
+      }
+
+      if (!pacienteInicialAberto && pacienteInicial) {
+        const contatoInicial = contacts.find((contact) => contact.participante_id === pacienteInicial);
+        if (contatoInicial) {
+          pacienteInicialAberto = true;
+          await selecionarContato(contatoInicial);
         }
       }
     } catch (error) {

@@ -44,7 +44,7 @@ export function registerConversationRoutes(app, dependencies) {
     const [{ data: usuarios, error: erroUsuarios }, { data: conversas, error: erroConversas }] = await Promise.all([
       admin.from(tabelaUsuarios).select("id, nome, avatar_url").in("id", idsContatos),
       admin.from("conversas")
-        .select("id, paciente_id, psicologo_id, criado_em, atualizado_em")
+        .select("id, paciente_id, psicologo_id, criado_em, atualizado_em, psicologo_leu_ate")
         .eq("tipo", "paciente_psicologo")
         .eq(campoUsuario, usuarioId)
         .in(campoOutro, idsContatos),
@@ -71,7 +71,33 @@ export function registerConversationRoutes(app, dependencies) {
         console.error("Erro ao carregar prévia de mensagem:", error);
         throw error;
       }
-      return [conversa.id, data];
+
+      let mensagemNaoLida = null;
+      let mensagensNaoLidas = 0;
+      if (perfil === "psicologo") {
+        let consultaNaoLidas = admin.from("mensagens_conversa")
+          .select("conteudo, remetente_id, papel_remetente, criado_em", { count: "exact" })
+          .eq("conversa_id", conversa.id)
+          .eq("papel_remetente", "paciente");
+        if (conversa.psicologo_leu_ate) {
+          consultaNaoLidas = consultaNaoLidas.gt("criado_em", conversa.psicologo_leu_ate);
+        }
+        const { data: naoLidas, count, error: erroNaoLidas } = await consultaNaoLidas
+          .order("criado_em", { ascending: false })
+          .limit(1);
+        if (erroNaoLidas) {
+          console.error("Erro ao contar mensagens não lidas:", erroNaoLidas);
+          throw erroNaoLidas;
+        }
+        mensagemNaoLida = naoLidas?.[0] || null;
+        mensagensNaoLidas = count || 0;
+      }
+
+      return [conversa.id, {
+        ultimaMensagem: data,
+        mensagemNaoLida,
+        mensagensNaoLidas,
+      }];
     })).catch((error) => ({ erro: error }));
 
     if (!Array.isArray(conversasComUltimaMensagem)) {
@@ -87,7 +113,13 @@ export function registerConversationRoutes(app, dependencies) {
         nome: usuario.nome || (perfil === "paciente" ? "Psicólogo" : "Paciente"),
         avatar_url: usuario.avatar_url || null,
         conversa_id: conversa?.id || null,
-        ultima_mensagem: conversa ? mensagensPorConversa.get(conversa.id) || null : null,
+        ultima_mensagem: conversa ? mensagensPorConversa.get(conversa.id)?.ultimaMensagem || null : null,
+        ultima_mensagem_nao_lida: conversa
+          ? mensagensPorConversa.get(conversa.id)?.mensagemNaoLida || null
+          : null,
+        mensagens_nao_lidas: conversa
+          ? mensagensPorConversa.get(conversa.id)?.mensagensNaoLidas || 0
+          : 0,
         atualizado_em: conversa?.atualizado_em || conversa?.criado_em || null,
       };
     }).sort((a, b) => {
@@ -228,6 +260,19 @@ export function registerConversationRoutes(app, dependencies) {
     if (error) {
       console.error("Erro ao listar mensagens:", error);
       return res.status(500).json({ erro: "Não foi possível carregar as mensagens." });
+    }
+
+    if (perfil === "psicologo") {
+      const ultimaMensagemPaciente = (data || []).find((mensagem) => mensagem.papel_remetente === "paciente");
+      if (ultimaMensagemPaciente) {
+        const { error: erroLeitura } = await admin.from("conversas")
+          .update({ psicologo_leu_ate: ultimaMensagemPaciente.criado_em })
+          .eq("id", participacao.conversa.id);
+        if (erroLeitura) {
+          console.error("Mensagens carregadas, mas não foi possível marcar como lidas:", erroLeitura);
+          return res.status(500).json({ erro: "Não foi possível atualizar o estado de leitura das mensagens." });
+        }
+      }
     }
 
     return res.json({ mensagens: (data || []).reverse() });

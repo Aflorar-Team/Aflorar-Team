@@ -13,7 +13,6 @@ if (!usuario || tipo !== "psicologo") {
 
 const idPsicologo = usuario?.id || usuario?.email || "local";
 const API_URL = "https://aflorar-backend.onrender.com";
-const chaveAgenda = `aflorar.agenda.${idPsicologo}`;
 const chaveAlertas = `aflorar.alertas.${idPsicologo}`;
 const modal = document.getElementById("popupModal");
 const popupTitulo = document.getElementById("popupTitulo");
@@ -99,17 +98,18 @@ async function carregarPacientesReais() {
         : "Nenhuma consulta marcada"));
       resumo.appendChild(linhaCompromisso);
 
-      const avisos = eventosFuturos.filter((evento) => evento.tipo === "aviso");
+      const avisosECompromissos = eventosFuturos.filter((evento) => ["aviso", "compromisso"].includes(evento.tipo));
       const secaoAvisos = criarElemento("div", "avisos-paciente");
       secaoAvisos.appendChild(criarElemento("strong", "", "Avisos e compromissos"));
-      if (!avisos.length) {
-        secaoAvisos.appendChild(criarElemento("p", "sem-avisos", "Nenhum aviso futuro."));
+      if (!avisosECompromissos.length) {
+        secaoAvisos.appendChild(criarElemento("p", "sem-avisos", "Nenhum aviso ou compromisso futuro."));
       } else {
         const listaAvisos = document.createElement("ul");
-        avisos.slice(0, 3).forEach((aviso) => {
+        avisosECompromissos.slice(0, 3).forEach((aviso) => {
           const item = document.createElement("li");
           const dataAviso = new Date(`${aviso.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-          item.textContent = `${dataAviso} · ${aviso.titulo}`;
+          const tipoAviso = aviso.tipo === "aviso" ? "Aviso" : "Consulta";
+          item.textContent = `${dataAviso} · ${tipoAviso}: ${aviso.titulo}`;
           listaAvisos.appendChild(item);
         });
         secaoAvisos.appendChild(listaAvisos);
@@ -244,65 +244,74 @@ function renderizarAlertas(paciente) {
   atualizarLista();
 }
 
-function renderizarDemandas() {
+async function renderizarDemandas() {
   const hoje = dataLocal(new Date());
-  const eventos = lerLista(chaveAgenda)
-    .filter((evento) => evento.data === hoje)
-    .sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
   const lista = criarElemento("ul", "painel-lista");
-
-  if (!eventos.length) {
-    lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum compromisso ou autoaviso marcado para hoje."));
-  } else {
-    eventos.forEach((evento) => {
-      const item = criarElemento("li", "item-demanda");
-      const horario = criarElemento("time", "item-horario", evento.hora || "--:--");
-      const detalhes = criarElemento("div", "item-demanda-texto");
-      detalhes.appendChild(criarElemento("strong", "", evento.titulo || "Sem título"));
-      detalhes.appendChild(criarElemento("span", "", evento.tipo === "autoaviso" ? "Autoaviso" : "Compromisso"));
-      if (evento.detalhes) detalhes.appendChild(criarElemento("p", "", evento.detalhes));
-      item.append(horario, detalhes);
-      lista.appendChild(item);
-    });
-  }
+  lista.appendChild(criarElemento("li", "estado-vazio-popup", "Carregando eventos..."));
 
   const agendaSection = criarElemento("section", "popup-secao");
   agendaSection.appendChild(criarElemento("h5", "", "Agenda de hoje"));
   agendaSection.appendChild(lista);
+  popupConteudo.replaceChildren(agendaSection);
 
-  const anotacoes = (localStorage.getItem("anotacoes_psicologo") || "").trim();
-  const anotacoesSection = criarElemento("section", "popup-secao");
-  anotacoesSection.appendChild(criarElemento("h5", "", "Anotações salvas"));
-  anotacoesSection.appendChild(anotacoes
-    ? criarElemento("p", "texto-anotacao", anotacoes)
-    : criarElemento("p", "estado-vazio-popup", "Nenhuma anotação salva ainda."));
+  try {
+    const resultado = await requisicaoApi(`/api/psicologo/eventos?inicio=${hoje}&fim=${hoje}`);
+    const eventos = resultado.eventos.sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
+    lista.replaceChildren();
+    if (!eventos.length) {
+      lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum compromisso, aviso ou autoaviso marcado para hoje."));
+      return;
+    }
 
-  const avisoMensagens = criarElemento(
-    "div",
-    "aviso-integracao",
-    "As mensagens de pacientes ainda não aparecem aqui: o chat atual conversa com a Flora IA e não salva mensagens para o psicólogo."
-  );
-  const acaoMensagens = criarElemento("button", "link-popup", "Ver mensagens recentes");
-  acaoMensagens.type = "button";
-  acaoMensagens.dataset.openPopup = "mensagens";
-  avisoMensagens.appendChild(acaoMensagens);
-
-  popupConteudo.replaceChildren(agendaSection, anotacoesSection, avisoMensagens);
+    eventos.forEach((evento) => {
+      const item = criarElemento("li", "item-demanda");
+      const horario = criarElemento("time", "item-horario", evento.hora || "--:--");
+      const detalhes = criarElemento("div", "item-demanda-texto");
+      const tipoEvento = evento.tipo === "autoaviso" ? "Autoaviso" : evento.tipo === "aviso" ? "Aviso" : "Compromisso";
+      detalhes.appendChild(criarElemento("strong", "", evento.titulo || "Sem título"));
+      detalhes.appendChild(criarElemento("span", "", evento.paciente_nome
+        ? `${tipoEvento} · ${evento.paciente_nome}`
+        : `${tipoEvento} · Geral`));
+      if (evento.detalhes) detalhes.appendChild(criarElemento("p", "", evento.detalhes));
+      item.append(horario, detalhes);
+      lista.appendChild(item);
+    });
+  } catch (error) {
+    lista.replaceChildren(criarElemento("li", "estado-vazio-popup", error.message));
+  }
 }
 
-function renderizarMensagens() {
-  const estado = criarElemento("div", "estado-mensagens");
-  estado.appendChild(criarElemento("span", "icone-estado", "💬"));
-  estado.appendChild(criarElemento("h5", "", "Converse com seus pacientes"));
-  estado.appendChild(criarElemento(
-    "p",
-    "",
-    "As conversas com vínculo aceito ficam organizadas por paciente."
-  ));
-  const abrirChat = criarElemento("a", "link-popup", "Abrir mensagens");
-  abrirChat.href = "./chat-psicologo.html";
-  estado.appendChild(abrirChat);
-  popupConteudo.replaceChildren(estado);
+async function renderizarMensagens() {
+  popupConteudo.replaceChildren(criarElemento("p", "estado-vazio-popup", "Carregando mensagens..."));
+  try {
+    const resultado = await requisicaoApi("/api/psicologo/conversas");
+    const contatos = resultado.contatos.filter((contato) => contato.mensagens_nao_lidas > 0);
+    if (!contatos.length) {
+      popupConteudo.replaceChildren(criarElemento("p", "estado-vazio-popup", "Nenhuma mensagem não lida dos pacientes."));
+      return;
+    }
+
+    const lista = document.createElement("ul");
+    lista.className = "painel-lista";
+    contatos.forEach((contato) => {
+      const mensagem = contato.ultima_mensagem_nao_lida;
+      const item = criarElemento("li", "item-demanda");
+      const horario = criarElemento("time", "item-horario", mensagem?.criado_em
+        ? new Date(mensagem.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+        : "");
+      const detalhes = criarElemento("div", "item-demanda-texto");
+      detalhes.appendChild(criarElemento("strong", "", `${contato.nome} · ${contato.mensagens_nao_lidas} não lida(s)`));
+      detalhes.appendChild(criarElemento("p", "", mensagem?.conteudo || "Há mensagens não lidas nesta conversa."));
+      const abrirChat = criarElemento("a", "link-popup", "Abrir conversa");
+      abrirChat.href = `./chat-psicologo.html?pacienteId=${encodeURIComponent(contato.participante_id)}`;
+      detalhes.appendChild(abrirChat);
+      item.append(horario, detalhes);
+      lista.appendChild(item);
+    });
+    popupConteudo.replaceChildren(lista);
+  } catch (error) {
+    popupConteudo.replaceChildren(criarElemento("p", "estado-vazio-popup", error.message));
+  }
 }
 
 function renderizarPacientes() {
