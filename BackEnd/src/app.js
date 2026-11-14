@@ -408,7 +408,9 @@ registerProfileRoutes(app, {
   normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth,
   usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
 });
-registerRelationshipRoutes(app, { autenticarUsuario, criarClienteAdmin, usuarioTemPerfil });
+registerRelationshipRoutes(app, {
+  autenticarUsuario, criarClienteAdmin, usuarioTemPerfil, verificarVinculoAceito,
+});
 registerClinicalRoutes(app, { autenticarUsuario, criarClienteAdmin, verificarVinculoAceito });
 registerAdminRoutes(app, { autenticarAdmin, criarClienteAdmin });
 registerFloraRoutes(app, { GEMINI_API_KEY, fetch });

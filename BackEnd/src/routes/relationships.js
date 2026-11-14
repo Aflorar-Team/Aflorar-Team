@@ -1,5 +1,7 @@
 export function registerRelationshipRoutes(app, dependencies) {
-  const { autenticarUsuario, criarClienteAdmin, usuarioTemPerfil } = dependencies;
+  const {
+    autenticarUsuario, criarClienteAdmin, usuarioTemPerfil, verificarVinculoAceito,
+  } = dependencies;
 
   app.get("/api/paciente/codigo-vinculo", async (req, res) => {
     const autenticacao = await autenticarUsuario(req, "paciente");
@@ -253,19 +255,39 @@ export function registerRelationshipRoutes(app, dependencies) {
       .order("data_evento", { ascending: true })
       .order("hora", { ascending: true });
     if (error) {
-      console.error("Erro ao carregar agenda do psicólogo:", error);
+      console.error("Erro ao carregar agenda do psicólogo:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error.code)) {
         return res.status(503).json({
           erro: "O banco ainda não está com a estrutura atualizada da agenda. Aplique a migração 20261114_agenda_schema_repair.sql no Supabase.",
         });
       }
-      return res.status(500).json({ erro: "Não foi possível carregar a agenda." });
+      return res.status(500).json({
+        erro: "Não foi possível carregar a agenda.",
+        ...(error.code ? { codigo: error.code } : {}),
+      });
     }
 
     const idsPacientes = [...new Set((eventos || []).map((evento) => evento.paciente_id).filter(Boolean))];
-    const { data: usuarios } = idsPacientes.length
+    const { data: usuarios, error: erroUsuarios } = idsPacientes.length
       ? await admin.from("usuarios").select("id, nome").in("id", idsPacientes)
       : { data: [] };
+    if (erroUsuarios) {
+      console.error("Erro ao carregar pacientes da agenda:", {
+        code: erroUsuarios.code,
+        message: erroUsuarios.message,
+        details: erroUsuarios.details,
+        hint: erroUsuarios.hint,
+      });
+      return res.status(500).json({
+        erro: "A agenda carregou, mas não foi possível carregar os nomes dos pacientes.",
+        ...(erroUsuarios.code ? { codigo: erroUsuarios.code } : {}),
+      });
+    }
     const nomes = new Map((usuarios || []).map((usuario) => [usuario.id, usuario.nome]));
     return res.json({
       eventos: (eventos || []).map((evento) => ({
@@ -321,8 +343,22 @@ export function registerRelationshipRoutes(app, dependencies) {
       notificar: tipo === "autoaviso" && req.body.notificar === true,
     }).select("id, tipo, titulo, data_evento, hora, detalhes, notificar, paciente_id").single();
     if (error) {
-      console.error("Erro ao salvar evento da agenda:", error);
-      return res.status(500).json({ erro: "Não foi possível salvar o evento." });
+      console.error("Erro ao salvar evento da agenda:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error.code)) {
+        return res.status(503).json({
+          erro: "O banco ainda não está com a estrutura atualizada da agenda. Aplique a migração 20261114_agenda_schema_repair.sql no Supabase.",
+          codigo: error.code,
+        });
+      }
+      return res.status(500).json({
+        erro: "Não foi possível salvar o evento.",
+        ...(error.code ? { codigo: error.code } : {}),
+      });
     }
     return res.status(201).json({ evento: {
       id: eventoSalvo.id,
