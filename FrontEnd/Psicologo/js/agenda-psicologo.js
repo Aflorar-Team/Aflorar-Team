@@ -363,6 +363,14 @@ formulario.addEventListener("submit", async (evento) => {
 async function iniciarAgenda() {
   await carregarPacientesVinculados();
   await carregarEventosMes();
+  const parametros = new URLSearchParams(location.search);
+  const novoEvento = parametros.get("novo");
+  if (["compromisso", "aviso"].includes(novoEvento)) {
+    parametros.delete("novo");
+    const query = parametros.toString();
+    history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
+    abrirDialogo(novoEvento);
+  }
   window.setInterval(verificarAutoavisos, 15000);
 }
 

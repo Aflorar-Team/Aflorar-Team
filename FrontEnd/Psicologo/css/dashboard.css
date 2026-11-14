@@ -595,6 +595,19 @@
     color: #667064;
   }
 
+  .acao-agenda-paciente {
+    width: fit-content;
+    color: #3b6848;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .acao-agenda-paciente:hover {
+    color: #244b30;
+  }
+
   .sem-avisos {
     margin: 0;
   }

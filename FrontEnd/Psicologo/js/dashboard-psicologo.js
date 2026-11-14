@@ -36,6 +36,13 @@ function eventoAindaFuturo(evento) {
   return new Date(`${evento.data}T${evento.hora.slice(0, 5)}:00`).getTime() >= Date.now();
 }
 
+function criarLinkAgendaPaciente(pacienteId, tipo, texto) {
+  const link = criarElemento("a", "acao-agenda-paciente", texto);
+  const parametros = new URLSearchParams({ pacienteId, novo: tipo });
+  link.href = `./agenda-psicologo.html?${parametros}`;
+  return link;
+}
+
 async function requisicaoApi(endpoint, options = {}) {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Sua sessão expirou. Entre novamente.");
@@ -96,6 +103,9 @@ async function carregarPacientesReais() {
       linhaCompromisso.appendChild(criarElemento("span", "", compromisso
         ? `${new Date(`${compromisso.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} às ${compromisso.hora.slice(0, 5)} · ${compromisso.titulo}`
         : "Nenhuma consulta marcada"));
+      if (!compromisso) {
+        linhaCompromisso.appendChild(criarLinkAgendaPaciente(vinculo.paciente_id, "compromisso", "Agendar consulta"));
+      }
       resumo.appendChild(linhaCompromisso);
 
       const avisosECompromissos = eventosFuturos.filter((evento) => ["aviso", "compromisso"].includes(evento.tipo));
@@ -114,6 +124,7 @@ async function carregarPacientesReais() {
         });
         secaoAvisos.appendChild(listaAvisos);
       }
+      secaoAvisos.appendChild(criarLinkAgendaPaciente(vinculo.paciente_id, "aviso", "Criar aviso"));
       resumo.appendChild(secaoAvisos);
       const acoes = criarElemento("div", "acoes-paciente");
       [
