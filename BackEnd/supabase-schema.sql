@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.vinculos_paciente_psicologo (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   paciente_id uuid NOT NULL REFERENCES public.pacientes(usuario_id) ON DELETE CASCADE,
   psicologo_id uuid NOT NULL REFERENCES public.psicologos(usuario_id) ON DELETE CASCADE,
-  solicitado_por uuid NOT NULL REFERENCES public.usuarios(id),
+  solicitado_por uuid NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
   status text NOT NULL DEFAULT 'pendente'
     CHECK (status IN ('pendente', 'aceito', 'recusado', 'encerrado')),
   criado_em timestamptz NOT NULL DEFAULT now(),
