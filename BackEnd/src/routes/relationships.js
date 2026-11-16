@@ -270,7 +270,7 @@ export function registerRelationshipRoutes(app, dependencies) {
       });
       if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error.code)) {
         return res.status(503).json({
-          erro: "O banco ainda não está com a estrutura atualizada da agenda. Aplique a migração 20261114_agenda_schema_repair.sql no Supabase.",
+          erro: "O banco ainda não está com a estrutura atualizada da agenda.",
         });
       }
       return res.status(500).json({
@@ -327,6 +327,9 @@ export function registerRelationshipRoutes(app, dependencies) {
       || !/^\d{2}:\d{2}$/.test(hora) || detalhes.length > 300) {
       return res.status(400).json({ erro: "Confira título, data, horário e observações do evento." });
     }
+    if (tipo === "consulta" && !pacienteId) {
+      return res.status(400).json({ erro: "Selecione o paciente desta consulta." });
+    }
     const admin = criarClienteAdmin();
     if (!admin) return res.status(503).json({ erro: "Serviço da agenda indisponível." });
     if (pacienteId) {
@@ -354,7 +357,7 @@ export function registerRelationshipRoutes(app, dependencies) {
       });
       if (["42P01", "42703", "PGRST204", "PGRST205"].includes(error.code)) {
         return res.status(503).json({
-          erro: "O banco ainda não está com a estrutura atualizada da agenda. Aplique a migração 20261114_agenda_schema_repair.sql no Supabase.",
+          erro: "O banco ainda não está com a estrutura atualizada da agenda. Aplique a migração 20261116_agenda_consulta_events.sql no Supabase.",
           codigo: error.code,
         });
       }

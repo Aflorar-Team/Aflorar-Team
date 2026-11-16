@@ -26,9 +26,16 @@ UPDATE public.eventos_agenda
 SET tipo = 'aviso', notificar = false, notificado_em = NULL
 WHERE tipo = 'autoaviso';
 
+UPDATE public.eventos_agenda
+SET tipo = 'compromisso'
+WHERE tipo = 'consulta' AND paciente_id IS NULL;
+
 ALTER TABLE public.eventos_agenda
   ADD CONSTRAINT eventos_agenda_tipo_check
-  CHECK (tipo IN ('compromisso', 'aviso', 'consulta'));
+  CHECK (
+    tipo IN ('compromisso', 'aviso', 'consulta')
+    AND (tipo <> 'consulta' OR paciente_id IS NOT NULL)
+  );
 
 CREATE INDEX IF NOT EXISTS idx_eventos_agenda_psicologo_data
   ON public.eventos_agenda (psicologo_id, data_evento, hora);

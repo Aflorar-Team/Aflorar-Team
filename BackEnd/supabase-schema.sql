@@ -224,7 +224,10 @@ CREATE TABLE IF NOT EXISTS public.eventos_agenda (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   psicologo_id uuid NOT NULL REFERENCES public.psicologos(usuario_id) ON DELETE CASCADE,
   paciente_id uuid REFERENCES public.pacientes(usuario_id) ON DELETE SET NULL,
-  tipo text NOT NULL CHECK (tipo IN ('compromisso', 'aviso', 'consulta')),
+  tipo text NOT NULL CHECK (
+    tipo IN ('compromisso', 'aviso', 'consulta')
+    AND (tipo <> 'consulta' OR paciente_id IS NOT NULL)
+  ),
   titulo varchar(90) NOT NULL,
   data_evento date NOT NULL,
   hora time NOT NULL,

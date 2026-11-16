@@ -262,7 +262,11 @@ document.getElementById("btnCancelarDialogo").addEventListener("click", () => di
 campoDestinoEvento.addEventListener("change", atualizarDestinoEvento);
 
 function atualizarDestinoEvento() {
-  const paraPaciente = campoDestinoEvento.value === "paciente";
+  const consultaComPaciente = tipoAtual === "consulta";
+  if (consultaComPaciente) campoDestinoEvento.value = "paciente";
+  destinoEventoContainer.hidden = consultaComPaciente;
+  campoDestinoEvento.disabled = consultaComPaciente;
+  const paraPaciente = consultaComPaciente || campoDestinoEvento.value === "paciente";
   areaPacienteEvento.hidden = !paraPaciente;
   campoPacienteEvento.disabled = !paraPaciente || pacientesVinculados.length === 0;
   campoPacienteEvento.required = paraPaciente && pacientesVinculados.length > 0;
@@ -280,8 +284,7 @@ function abrirDialogo(tipo) {
   };
   document.getElementById("tipoEventoDialogo").textContent = rotulos[tipo].sobrelinha;
   document.getElementById("tituloDialogo").textContent = rotulos[tipo].titulo;
-  destinoEventoContainer.hidden = false;
-  campoDestinoEvento.disabled = false;
+  campoDestinoEvento.value = tipo === "consulta" ? "paciente" : "geral";
   const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
   if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
     campoDestinoEvento.value = "paciente";
@@ -294,10 +297,12 @@ function abrirDialogo(tipo) {
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
-  if (campoDestinoEvento.value === "paciente" && !campoPacienteEvento.value) {
+  if ((tipoAtual === "consulta" || campoDestinoEvento.value === "paciente") && !campoPacienteEvento.value) {
     window.alert(pacientesVinculados.length
-      ? "Selecione o paciente que receberá este evento."
-      : "Não há pacientes vinculados para selecionar.");
+      ? tipoAtual === "consulta"
+        ? "Selecione o paciente desta consulta."
+        : "Selecione o paciente que receberá este evento."
+      : "É necessário ter um paciente vinculado para criar uma consulta ou evento para paciente.");
     return;
   }
   const botaoSalvar = formulario.querySelector(".botao-salvar");
