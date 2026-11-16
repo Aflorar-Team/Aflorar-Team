@@ -29,25 +29,25 @@ if (telefoneInput) {
 
 // Modo escuro
 function alternarModo() {
-  document.body.classList.toggle("dark");
-  const isDark = document.body.classList.contains("dark");
-  localStorage.setItem("tema", isDark ? "escuro" : "claro");
-  atualizarBotaoTema(isDark);
+  const definirTema = window.AflorarTheme?.alternar;
+  if (!definirTema) throw new Error("O serviço de tema não foi carregado.");
+  definirTema().then(atualizarBotaoTemaSalvo).catch((error) => {
+    mostrarToast(error.message, "#E8717A");
+  });
 }
 
-function atualizarBotaoTema(isDark) {
+function atualizarBotaoTemaSalvo() {
   const btnModo = document.getElementById("btnModoEscuro");
   if (!btnModo) return;
+  const isDark = document.documentElement.dataset.theme === "escuro";
   btnModo.querySelector(".icone").textContent = isDark ? "☀️" : "🌙";
   const rotulo = btnModo.querySelector(".nav-label");
   if (rotulo) rotulo.textContent = isDark ? "Modo claro" : "Modo escuro";
   btnModo.setAttribute("aria-pressed", String(isDark));
 }
 
-// Aplica tema salvo
-const temaEscuro = localStorage.getItem("tema") === "escuro";
-document.body.classList.toggle("dark", temaEscuro);
-atualizarBotaoTema(temaEscuro);
+window.addEventListener("aflorar:tema-alterado", atualizarBotaoTemaSalvo);
+atualizarBotaoTemaSalvo();
 
 // Sair
 async function sair() {

@@ -405,7 +405,7 @@ app.use(express.json());
 
 registerProfileRoutes(app, {
   SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, supabase,
-  normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth,
+  normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, criarClienteAdmin,
   usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
 });
 registerRelationshipRoutes(app, {

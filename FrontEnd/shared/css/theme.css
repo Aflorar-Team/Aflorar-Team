@@ -1,0 +1,171 @@
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  background: #171b24;
+  color: #e8eaf0;
+  --theme-bg: #171b24;
+  --theme-surface: #232936;
+  --theme-surface-raised: #2b3342;
+  --theme-text: #e8eaf0;
+  --theme-muted: #b7bfcc;
+  --theme-border: #414b5b;
+}
+
+:root[data-theme="dark"] body {
+  background-color: var(--theme-bg) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] body * {
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] :is(
+  .container,
+  .main-content,
+  .content,
+  .page-container,
+  .page-content,
+  .card,
+  .panel,
+  .modal,
+  .section,
+  .welcome,
+  .barometro,
+  .assinatura,
+  .boas-vindas,
+  .card-paciente,
+  .calendario,
+  .painel-dia,
+  .modal-content,
+  .chat-container,
+  .chat-sidebar-heading,
+  .chat-contact,
+  .chat-conversation,
+  .chat-conversation-heading,
+  .private-message,
+  .chat-status,
+  .chat-compose,
+  .private-chat-main,
+  .chat-sidebar,
+  .chat-message,
+  .chat-messages,
+  .chat-box,
+  .chat-input,
+  .quiz-card,
+  .quiz-container,
+  .paper,
+  .sidebar,
+  .titulo-card,
+  .card-grafico,
+  .painel-controles,
+  .calendario-container,
+  .calendario-header,
+  .dia,
+  .compromisso,
+  .evento,
+  .dialog-evento,
+  .form-container,
+  .codigo-paciente,
+  .side-card,
+  .grafico-container,
+  .stat-card,
+  .pergunta,
+  .modal-backdrop .modal,
+  .evolution-panel,
+  .evolution-entry,
+  .page-heading,
+  .lista-compartilhadas,
+  .evolucao-compartilhada,
+  .anotacao-card,
+  .anotacao,
+  .painel,
+  .editor-container,
+  .anotacoes-container
+) {
+  border-color: var(--theme-border) !important;
+  background-color: var(--theme-surface) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] :is(
+  .chat-conversation,
+  .chat-input,
+  .chat-search,
+  .chat-contact:hover,
+  .chat-contact.active,
+  .chat-search,
+  .chat-compose textarea,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+  textarea,
+  .option,
+  .progress-container,
+  .field input,
+  .field .input-icon,
+  .campo input,
+  .campo .input-icon,
+  .dialog-evento input,
+  .dialog-evento select,
+  .dialog-evento textarea,
+  .modal-backdrop .field input,
+  .evolution-panel textarea,
+  .selecao-paciente select,
+  select,
+  .editor,
+  .lined-textarea
+) {
+  border-color: var(--theme-border) !important;
+  background-color: var(--theme-surface-raised) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] :is(
+  .navbar,
+  .topbar,
+  .menu a,
+  .logo,
+  .hero,
+  .hero-left,
+  .hero-right,
+  .navbar .logo,
+  .side-btn,
+  .btn-primary,
+  .btn-danger,
+  button
+) {
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] :is(
+  .chat-sidebar-heading p,
+  .chat-list-state,
+  .chat-contact-time,
+  .chat-contact-preview,
+  .data-selecionada,
+  .estado-vazio,
+  footer
+) {
+  color: var(--theme-muted) !important;
+}
+
+:root[data-theme="dark"] .chat-contact {
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme="dark"] .chat-conversation-heading,
+:root[data-theme="dark"] .chat-sidebar {
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme="dark"] .message.bot p {
+  background: var(--theme-surface-raised) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] .option.selected {
+  background: #49353d !important;
+}
+
+:root[data-theme="dark"] .menu a,
+:root[data-theme="dark"] .logo {
+  color: #fff !important;
+}

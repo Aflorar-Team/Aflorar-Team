@@ -887,9 +887,16 @@
     controleTema.type = "checkbox";
     controleTema.checked = document.body.classList.contains("dark");
     controleTema.setAttribute("aria-label", "Ativar modo escuro no jardim");
-    controleTema.addEventListener("change", () => {
-      document.body.classList.toggle("dark", controleTema.checked);
-      localStorage.setItem("tema", controleTema.checked ? "escuro" : "claro");
+    controleTema.addEventListener("change", async () => {
+      controleTema.disabled = true;
+      try {
+        await window.AflorarTheme.definirTema(controleTema.checked ? "escuro" : "claro");
+      } catch (error) {
+        controleTema.checked = document.documentElement.dataset.theme === "escuro";
+        showToast(error.message, "error");
+      } finally {
+        controleTema.disabled = false;
+      }
     });
     labelTema.append(textoTema, controleTema);
 

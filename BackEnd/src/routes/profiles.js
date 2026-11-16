@@ -1,5 +1,55 @@
 export function registerProfileRoutes(app, dependencies) {
-  const { SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, supabase, normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil } = dependencies;
+  const { SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, supabase, normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, criarClienteAdmin, usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil } = dependencies;
+
+  async function autenticarConta(req) {
+    const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (!token) return { erro: "Autenticação obrigatória.", status: 401 };
+    const clienteAuth = criarClienteAuth();
+    const { data, error } = await clienteAuth.auth.getUser(token);
+    if (error || !data.user) return { erro: "Sessão inválida ou expirada.", status: 401 };
+    if (!["paciente", "psicologo"].some((perfil) => usuarioTemPerfil(data.user, perfil))) {
+      return { erro: "Acesso não autorizado.", status: 403 };
+    }
+    return { user: data.user };
+  }
+
+  app.get("/api/configuracoes/tema", async (req, res) => {
+    const autenticacao = await autenticarConta(req);
+    if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+    const admin = criarClienteAdmin();
+    if (!admin) return res.status(503).json({ erro: "Serviço de configurações indisponível." });
+
+    const { data, error } = await admin.from("configuracoes_usuario")
+      .select("tema")
+      .eq("usuario_id", autenticacao.user.id)
+      .maybeSingle();
+    if (error) {
+      console.error("Erro ao carregar o tema da conta:", error);
+      return res.status(500).json({ erro: "Não foi possível carregar o tema da conta." });
+    }
+    return res.json({ tema: data?.tema || "claro", configurado: Boolean(data) });
+  });
+
+  app.put("/api/configuracoes/tema", async (req, res) => {
+    const autenticacao = await autenticarConta(req);
+    if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+    const { tema } = req.body;
+    if (!["claro", "escuro"].includes(tema)) {
+      return res.status(400).json({ erro: "Tema inválido." });
+    }
+    const admin = criarClienteAdmin();
+    if (!admin) return res.status(503).json({ erro: "Serviço de configurações indisponível." });
+
+    const { error } = await admin.from("configuracoes_usuario").upsert({
+      usuario_id: autenticacao.user.id,
+      tema,
+    }, { onConflict: "usuario_id" });
+    if (error) {
+      console.error("Erro ao salvar o tema da conta:", error);
+      return res.status(500).json({ erro: "Não foi possível salvar o tema da conta." });
+    }
+    return res.json({ tema });
+  });
 
   app.get("/api/auth-config", (req, res) => {
     if (!SUPABASE_URL || !SUPABASE_KEY) {
