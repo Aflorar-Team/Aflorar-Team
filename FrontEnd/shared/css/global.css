@@ -61,7 +61,7 @@ dialog[open] {
 .logo {
   font-size: 22px;
   font-weight: bold;
-  color: white;
+  color: rgb(255, 155, 68);
 }
 
 .menu {

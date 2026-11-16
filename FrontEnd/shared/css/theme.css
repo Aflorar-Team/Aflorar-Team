@@ -19,7 +19,7 @@
   background-color: var(--bg-top) !important;
 }
 
-:root[data-theme="dark"] body * {
+:root[data-theme="dark"] body:not(.garden-page) * {
   color: var(--theme-text) !important;
 }
 
@@ -31,7 +31,6 @@
   .page-content,
   .card,
   .panel,
-  .modal,
   .section,
   .welcome,
   .barometro,
@@ -101,7 +100,6 @@
   .grafico-container,
   .stat-card,
   .pergunta,
-  .modal-backdrop .modal,
   .evolution-panel,
   .evolution-entry,
   .anotacao-card,
