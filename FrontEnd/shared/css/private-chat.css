@@ -40,6 +40,7 @@ body.private-chat-page {
 .chat-sidebar {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
   border-right: 1px solid #eee7e1;
   background: #fff;
@@ -81,7 +82,8 @@ body.private-chat-page {
 }
 
 .chat-contact-list {
-  flex: 1;
+  min-height: 0;
+  flex: 1 1 0;
   overflow-y: auto;
 }
 
@@ -177,6 +179,7 @@ body.private-chat-page {
 .chat-conversation {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
   background: #f8f6f3;
 }
@@ -232,8 +235,8 @@ body.private-chat-page {
 
 .chat-messages {
   display: flex;
-  flex: 1;
   min-height: 0;
+  flex: 1 1 0;
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
