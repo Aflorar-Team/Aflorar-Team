@@ -14,6 +14,7 @@ body {
 body.dark {
   background: #1a1a2e;
   color: #eee;
+  color-scheme: dark;
 }
 
 /* NAVBAR */
@@ -189,6 +190,57 @@ body.dark .campo input {
 }
 body.dark .campo .input-icon {
   background: #2e2e45;
+}
+
+body.dark .nav-btn {
+  border-color: rgba(238, 238, 238, 0.3);
+  background: rgba(46, 46, 69, 0.9);
+  color: #eee;
+}
+
+body.dark .nav-btn:hover {
+  background: #393950;
+}
+
+body.dark .hero {
+  background-color: #24243a;
+}
+
+body.dark .hero-left {
+  background-color: #161625;
+}
+
+body.dark .hero-right {
+  background-color: #24243a;
+}
+
+body.dark .form-container,
+body.dark footer {
+  color: #eee;
+}
+
+body.dark .codigo-paciente {
+  border-color: rgba(238, 238, 238, 0.18);
+  background: rgba(46, 46, 69, 0.7);
+}
+
+body.dark .codigo-paciente h2,
+body.dark .solicitacoes-paciente h3,
+body.dark .codigo-paciente p,
+body.dark #codigoVinculoPaciente,
+body.dark #listaSolicitacoesPaciente li {
+  color: #eee;
+}
+
+body.dark .codigo-paciente-linha,
+body.dark #listaSolicitacoesPaciente li {
+  border-color: rgba(238, 238, 238, 0.14);
+}
+
+body.dark .btn-aceitar-vinculo,
+body.dark .btn-copiar-codigo {
+  background: #799a66;
+  color: #101810;
 }
 
 .campo .input-icon span {
@@ -389,18 +441,6 @@ footer {
   padding: 10px 0;
   color: #3b4737;
   border-bottom: 1px solid rgba(59, 71, 55, 0.1);
-}
-
-body.dark .codigo-paciente {
-  background: rgba(46, 46, 69, 0.7);
-}
-
-body.dark .codigo-paciente h2,
-body.dark .solicitacoes-paciente h3,
-body.dark .codigo-paciente p,
-body.dark #codigoVinculoPaciente,
-body.dark #listaSolicitacoesPaciente li {
-  color: #eee;
 }
 
 @media (max-width: 720px) {

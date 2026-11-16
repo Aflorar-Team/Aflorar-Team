@@ -46,6 +46,8 @@
   const sideCardTitle = document.getElementById("side-card-title");
   const sideCardBody = document.getElementById("side-card-body");
   const closeCard = document.getElementById("close-card");
+  const temaJardimEscuro = localStorage.getItem("tema") === "escuro";
+  document.body.classList.toggle("dark", temaJardimEscuro);
   const evolutionBackdrop = document.getElementById("evolution-backdrop");
   const evolutionDetails = document.getElementById("evolution-details");
   const evolutionCompose = document.getElementById("evolution-compose");
@@ -869,6 +871,37 @@
     sideCard.classList.add("show");
   }
 
+  function openGardenSettings() {
+    sideCardTitle.textContent = "Configurações do jardim";
+    sideCardBody.replaceChildren();
+
+    const descricao = document.createElement("p");
+    descricao.className = "garden-settings-description";
+    descricao.textContent = "Personalize a aparência do jardim. Essa preferência também é usada nas configurações da conta.";
+
+    const labelTema = document.createElement("label");
+    labelTema.className = "garden-setting";
+    const textoTema = document.createElement("span");
+    textoTema.textContent = "Modo escuro";
+    const controleTema = document.createElement("input");
+    controleTema.type = "checkbox";
+    controleTema.checked = document.body.classList.contains("dark");
+    controleTema.setAttribute("aria-label", "Ativar modo escuro no jardim");
+    controleTema.addEventListener("change", () => {
+      document.body.classList.toggle("dark", controleTema.checked);
+      localStorage.setItem("tema", controleTema.checked ? "escuro" : "claro");
+    });
+    labelTema.append(textoTema, controleTema);
+
+    const linkConta = document.createElement("a");
+    linkConta.className = "garden-account-settings";
+    linkConta.href = "./configuracoes.html";
+    linkConta.textContent = "Abrir configurações da conta";
+
+    sideCardBody.append(descricao, labelTema, linkConta);
+    sideCard.classList.add("show");
+  }
+
   document.querySelectorAll(".side-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       const key = btn.dataset.card;
@@ -881,9 +914,7 @@
         return;
       }
 
-      sideCardTitle.textContent = "Configurações";
-      sideCardBody.textContent = "Ajustes de conta, notificações e preferências. Em breve.";
-      sideCard.classList.add("show");
+      openGardenSettings();
     });
   });
 

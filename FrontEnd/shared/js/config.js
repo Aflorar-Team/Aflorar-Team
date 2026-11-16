@@ -32,20 +32,22 @@ function alternarModo() {
   document.body.classList.toggle("dark");
   const isDark = document.body.classList.contains("dark");
   localStorage.setItem("tema", isDark ? "escuro" : "claro");
+  atualizarBotaoTema(isDark);
+}
+
+function atualizarBotaoTema(isDark) {
   const btnModo = document.getElementById("btnModoEscuro");
-  if (btnModo) {
-    btnModo.querySelector(".icone").textContent = isDark ? "☀️" : "🌙";
-  }
+  if (!btnModo) return;
+  btnModo.querySelector(".icone").textContent = isDark ? "☀️" : "🌙";
+  const rotulo = btnModo.querySelector(".nav-label");
+  if (rotulo) rotulo.textContent = isDark ? "Modo claro" : "Modo escuro";
+  btnModo.setAttribute("aria-pressed", String(isDark));
 }
 
 // Aplica tema salvo
-if (localStorage.getItem("tema") === "escuro") {
-  document.body.classList.add("dark");
-  const btnModo = document.getElementById("btnModoEscuro");
-  if (btnModo) {
-    btnModo.querySelector(".icone").textContent = "☀️";
-  }
-}
+const temaEscuro = localStorage.getItem("tema") === "escuro";
+document.body.classList.toggle("dark", temaEscuro);
+atualizarBotaoTema(temaEscuro);
 
 // Sair
 async function sair() {
