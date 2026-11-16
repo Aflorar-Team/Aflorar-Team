@@ -283,14 +283,17 @@ body.dark .campo .input-icon {
 .toast {
   display: none;
   position: fixed;
-  bottom: 30px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  bottom: auto;
+  max-width: calc(100vw - 32px);
+  transform: translate(-50%, -50%);
   background: #4a7c59;
   color: white;
   padding: 12px 28px;
   border-radius: 12px;
   font-size: 14px;
+  text-align: center;
   z-index: 999;
 }
 

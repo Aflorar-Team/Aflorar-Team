@@ -25,6 +25,15 @@ svg {
   max-width: 100%;
 }
 
+dialog[open] {
+  position: fixed;
+  inset: 0;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  overflow: auto;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
