@@ -33,17 +33,24 @@ function criarElemento(tag, classe, texto) {
 }
 
 function eventoAindaFuturo(evento) {
-  const agora = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+  const hojeRecife = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Recife",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
   }).formatToParts(new Date()).map(({ type, value }) => [type, value]));
-  const horarioAtual = `${agora.year}-${agora.month}-${agora.day}T${agora.hour}:${agora.minute}`;
-  return `${evento.data}T${evento.hora.slice(0, 5)}` >= horarioAtual;
+  const dataHoje = `${hojeRecife.year}-${hojeRecife.month}-${hojeRecife.day}`;
+  return evento.data >= dataHoje;
+}
+
+function hojeEmRecife() {
+  const partes = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Recife",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date()).map(({ type, value }) => [type, value]));
+  return `${partes.year}-${partes.month}-${partes.day}`;
 }
 
 function mostrarErroPopup(mensagem) {
@@ -85,6 +92,24 @@ async function carregarPacientesReais() {
   try {
     const resultado = await requisicaoApi("/api/psicologo/vinculos");
     const pacientes = resultado.vinculos.filter((vinculo) => vinculo.status === "aceito");
+    let eventosPorPaciente = new Map();
+    let erroAoCarregarEventos = null;
+    try {
+      const inicio = hojeEmRecife();
+      const resultadoEventos = await requisicaoApi(
+        `/api/psicologo/eventos?inicio=${inicio}&fim=9999-12-31`,
+      );
+      resultadoEventos.eventos.forEach((evento) => {
+        if (!evento.paciente_id) return;
+        const listaEventos = eventosPorPaciente.get(evento.paciente_id) || [];
+        listaEventos.push(evento);
+        eventosPorPaciente.set(evento.paciente_id, listaEventos);
+      });
+    } catch (error) {
+      console.error("Erro ao carregar eventos dos pacientes:", error);
+      erroAoCarregarEventos = error.message;
+    }
+
     lista.replaceChildren();
     if (!pacientes.length) {
       lista.appendChild(criarElemento("p", "estado-vazio-pacientes", "Nenhum paciente aceitou o vínculo ainda."));
@@ -114,13 +139,21 @@ async function carregarPacientesReais() {
       topo.appendChild(identidade);
 
       const resumo = criarElemento("div", "resumo-agenda-paciente");
-      const eventosFuturos = (paciente.eventos || []).filter(eventoAindaFuturo);
+      const eventosFuturos = erroAoCarregarEventos
+        ? []
+        : (eventosPorPaciente.get(vinculo.paciente_id) || []).filter(eventoAindaFuturo);
       const consulta = eventosFuturos.find((evento) => evento.tipo === "consulta");
       const linhaConsulta = criarElemento("p", "proximo-compromisso");
       linhaConsulta.appendChild(criarElemento("strong", "", "Próxima consulta"));
-      linhaConsulta.appendChild(criarElemento("span", "", consulta
-        ? `${new Date(`${consulta.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} às ${consulta.hora.slice(0, 5)} · ${consulta.titulo}`
-        : "Nenhuma consulta marcada"));
+      let textoConsulta = "Nenhuma consulta marcada";
+      if (erroAoCarregarEventos) {
+        textoConsulta = "Não foi possível carregar os eventos.";
+      } else if (consulta) {
+        const dataConsulta = new Date(`${consulta.data}T12:00:00`)
+          .toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+        textoConsulta = `${dataConsulta} às ${consulta.hora.slice(0, 5)} · ${consulta.titulo}`;
+      }
+      linhaConsulta.appendChild(criarElemento("span", "", textoConsulta));
       if (!consulta) {
         linhaConsulta.appendChild(criarLinkAgendaPaciente(vinculo.paciente_id, "consulta", "Agendar consulta"));
       }
@@ -129,7 +162,9 @@ async function carregarPacientesReais() {
       const avisosECompromissos = eventosFuturos.filter((evento) => ["aviso", "compromisso", "consulta"].includes(evento.tipo));
       const secaoAvisos = criarElemento("div", "avisos-paciente");
       secaoAvisos.appendChild(criarElemento("strong", "", "Avisos, compromissos e consultas"));
-      if (!avisosECompromissos.length) {
+      if (erroAoCarregarEventos) {
+        secaoAvisos.appendChild(criarElemento("p", "sem-avisos", erroAoCarregarEventos));
+      } else if (!avisosECompromissos.length) {
         secaoAvisos.appendChild(criarElemento("p", "sem-avisos", "Nenhum evento futuro."));
       } else {
         const listaAvisos = document.createElement("ul");
