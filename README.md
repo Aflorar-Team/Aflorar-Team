@@ -149,7 +149,7 @@ PORT=3000
 `SUPABASE_SERVICE_ROLE_KEY` é usada apenas pelo backend para salvar papéis e perfis. Configure-a como variável secreta no Render; nunca a inclua no frontend ou em repositório público.
 O site não possui formulário de contato; os canais disponíveis estão na seção Contato da página inicial. A configuração de e-mail do backend é usada somente para recuperação de senha. Se optar pelo Gmail SMTP, ative a verificação em duas etapas na conta, crie uma senha de app nas configurações de Segurança da Conta Google e configure-a em `SMTP_APP_PASSWORD`; não use a senha normal da conta Google nem compartilhe a senha de app. Se a hospedagem não permitir conexões SMTP, configure o Resend via API HTTPS.
 
-`RESEND_API_KEY` e `EMAIL_FROM` são opcionais e habilitam o envio da recuperação de senha pelo Resend quando as variáveis SMTP não estão configuradas; o remetente precisa ser autorizado no Resend. `FRONTEND_URL` deve ser a origem de produção do frontend. No Supabase, adicione `https://aflorar-team.vercel.app/redefinir-senha.html` à lista de URLs de redirecionamento permitidas para que o link de recuperação retorne à aplicação.
+`RESEND_API_KEY` e `EMAIL_FROM` são opcionais e habilitam o envio da recuperação de senha pelo Resend quando as variáveis SMTP não estão configuradas ou quando o envio SMTP falha. O remetente precisa ser autorizado no Resend. `FRONTEND_URL` deve ser a origem de produção do frontend. No Supabase, adicione `https://aflorar-team.vercel.app/redefinir-senha.html` à lista de URLs de redirecionamento permitidas para que o link de recuperação retorne à aplicação.
 
 **4. Rode o servidor**
 ```bash

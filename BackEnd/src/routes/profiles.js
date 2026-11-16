@@ -17,7 +17,8 @@ export function registerProfileRoutes(app, dependencies) {
       auth: { user: SMTP_USER, pass: SMTP_APP_PASSWORD },
     })
     : null;
-  const emailDisponivel = Boolean(transportadorGmail || (RESEND_API_KEY && EMAIL_FROM));
+  const resendDisponivel = Boolean(RESEND_API_KEY && EMAIL_FROM);
+  const emailDisponivel = Boolean(transportadorGmail || resendDisponivel);
 
   function excedeuLimite(req, chave, maximo) {
     const agora = Date.now();
@@ -62,7 +63,8 @@ export function registerProfileRoutes(app, dependencies) {
         return true;
       } catch (error) {
         console.error("Falha ao enviar e-mail pelo Gmail:", error.code || error.name || "erro desconhecido");
-        return false;
+        if (!resendDisponivel) return false;
+        console.info("Tentando enviar pelo Resend após falha no Gmail SMTP.");
       }
     }
 
