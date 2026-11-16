@@ -15,7 +15,6 @@ export const ADMIN_EMAIL = readEnv("ADMIN_EMAIL").toLowerCase();
 export const GEMINI_API_KEY = readEnv("GEMINI_API_KEY");
 export const RESEND_API_KEY = readEnv("RESEND_API_KEY");
 export const EMAIL_FROM = readEnv("EMAIL_FROM");
-export const CONTACT_EMAIL = readEnv("CONTACT_EMAIL");
 export const SMTP_USER = readEnv("SMTP_USER");
 export const SMTP_APP_PASSWORD = readEnv("SMTP_APP_PASSWORD").replace(/\s/g, "");
 export const FRONTEND_URL = readEnv("FRONTEND_URL") || "https://aflorar-team.vercel.app";

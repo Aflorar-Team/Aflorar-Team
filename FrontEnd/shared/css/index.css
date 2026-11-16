@@ -115,10 +115,6 @@ button:hover {
     font-size: 18px;
   }
 
-  .contato-form {
-    width: 100%;
-    max-width: 350px;
-  }
 }
 
 @media (max-width: 480px) {
@@ -257,57 +253,4 @@ section {
 .info-item a {
   display: block;
   margin-top: 5px;
-}
-
-/* FORM */
-.contato-form {
-  display: flex;
-  flex-direction: column;
-  width: 350px;
-  text-align: left;
-}
-
-.contato-form label {
-  margin-top: 15px;
-  margin-bottom: 5px;
-  color: #3f4a3c;
-}
-
-.contato-form input,
-.contato-form textarea {
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  background: #eee;
-  outline: none;
-}
-
-.contato-form textarea {
-  min-height: 120px;
-  resize: none;
-}
-
-.contato-honeypot {
-  position: absolute;
-  left: -10000px;
-  width: 1px;
-  height: 1px;
-}
-
-.contato-status {
-  min-height: 1.5em;
-  margin-top: 10px;
-  color: #3f4a3c;
-  overflow-wrap: anywhere;
-}
-
-.contato-status:empty {
-  display: none;
-}
-
-/* BOTÃO */
-.contato-form button {
-  margin-top: 20px;
-  background: #FF8886;
-  border-radius: 10px;
 }

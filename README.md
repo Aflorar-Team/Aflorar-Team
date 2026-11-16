@@ -142,15 +142,14 @@ SUPABASE_SERVICE_ROLE_KEY=sua_chave_de_servico_do_supabase
 ADMIN_EMAIL=administrador@seudominio.com
 SMTP_USER=aflorar4@gmail.com
 SMTP_APP_PASSWORD=sua_senha_de_app_google
-CONTACT_EMAIL=aflorar4@gmail.com
 FRONTEND_URL=https://aflorar-team.vercel.app
 PORT=3000
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` é usada apenas pelo backend para salvar papéis e perfis. Configure-a como variável secreta no Render; nunca a inclua no frontend ou em repositório público.
-Para a demonstração do MVP, o formulário de contato e a recuperação de senha enviam e-mails usando SMTP do Gmail. Ative a verificação em duas etapas na conta `aflorar4@gmail.com`, crie uma senha de app nas configurações de Segurança da Conta Google e configure essa senha em `SMTP_APP_PASSWORD` no Render. Use `SMTP_USER=aflorar4@gmail.com`; `CONTACT_EMAIL=aflorar4@gmail.com` recebe as mensagens do formulário, enquanto recuperação de senha é enviada ao endereço digitado no login. Não use a senha normal da conta Google nem compartilhe a senha de app. O Gmail tem limites de envio; para o MVP com poucos jurados, esse volume é baixo. Para produção com maior volume, prefira um provedor transacional e domínio verificado.
+O site não possui formulário de contato; os canais disponíveis estão na seção Contato da página inicial. A configuração de e-mail do backend é usada somente para recuperação de senha. Se optar pelo Gmail SMTP, ative a verificação em duas etapas na conta, crie uma senha de app nas configurações de Segurança da Conta Google e configure-a em `SMTP_APP_PASSWORD`; não use a senha normal da conta Google nem compartilhe a senha de app. Se a hospedagem não permitir conexões SMTP, configure o Resend via API HTTPS.
 
-`RESEND_API_KEY` e `EMAIL_FROM` são opcionais e servem como alternativa quando as variáveis SMTP não estão configuradas; nesse caso, o remetente precisa ser verificado no Resend. `FRONTEND_URL` deve ser a origem de produção do frontend. No Supabase, adicione `https://aflorar-team.vercel.app/redefinir-senha.html` à lista de URLs de redirecionamento permitidas para que o link de recuperação retorne à aplicação.
+`RESEND_API_KEY` e `EMAIL_FROM` são opcionais e habilitam o envio da recuperação de senha pelo Resend quando as variáveis SMTP não estão configuradas; o remetente precisa ser autorizado no Resend. `FRONTEND_URL` deve ser a origem de produção do frontend. No Supabase, adicione `https://aflorar-team.vercel.app/redefinir-senha.html` à lista de URLs de redirecionamento permitidas para que o link de recuperação retorne à aplicação.
 
 **4. Rode o servidor**
 ```bash
@@ -174,7 +173,6 @@ Abra `http://localhost:3000` no navegador.
 | `ADMIN_EMAIL` | E-mail verificado autorizado a revisar profissionais |
 | `SMTP_USER` | Conta Gmail usada pelo backend para enviar e-mails |
 | `SMTP_APP_PASSWORD` | Senha de app do Gmail, criada na Conta Google com verificação em duas etapas |
-| `CONTACT_EMAIL` | Destinatário das mensagens do formulário de contato (ex.: `aflorar4@gmail.com`) |
 | `RESEND_API_KEY` | (Opcional) Chave privada do Resend como alternativa ao SMTP |
 | `EMAIL_FROM` | (Opcional) Remetente verificado no Resend; usado somente com essa alternativa |
 | `FRONTEND_URL` | Origem do frontend usada como destino dos links de redefinição |

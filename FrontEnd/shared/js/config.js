@@ -65,15 +65,14 @@ async function sair() {
 // Salvar dados
 async function salvarDados() {
   const nome = nomeInput.value.trim();
-  const cpf = cpfInput.value.replace(/\D/g, "");
   const telefone = telefoneInput.value.replace(/\D/g, "");
   const perfil = localStorage.getItem("tipo");
   const senha = document.getElementById("senha").value;
   const confirmar = document.getElementById("confirmarSenha").value;
   const botao = document.querySelector(".btn-editar");
 
-  if (!nome || cpf.length !== 11 || ![10, 11].includes(telefone.length)) {
-    mostrarToast("Confira nome, CPF e telefone antes de salvar.", "#E8717A");
+  if (!nome || ![10, 11].includes(telefone.length)) {
+    mostrarToast("Confira nome e telefone antes de salvar.", "#E8717A");
     return;
   }
   if (!["paciente", "psicologo"].includes(perfil)) {
@@ -106,7 +105,6 @@ async function salvarDados() {
       body: JSON.stringify({
         perfil,
         nome,
-        cpf,
         telefone,
         ...(perfil === "psicologo" ? { crp: crpInput.value.trim() } : {}),
         ...(senha ? { senha } : {}),
@@ -135,17 +133,6 @@ function mostrarToast(msg, cor = "#4A7C59") {
   toast.style.background = cor;
   toast.style.display = "block";
   setTimeout(() => toast.style.display = "none", 3000);
-}
-
-// Máscara CPF
-if (cpfInput) {
-  cpfInput.addEventListener("input", function () {
-    let v = this.value.replace(/\D/g, "").slice(0, 11);
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    this.value = v;
-  });
 }
 
 async function requisicaoPaciente(endpoint, options = {}) {

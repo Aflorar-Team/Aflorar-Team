@@ -13,7 +13,6 @@ import {
   SUPABASE_URL,
   RESEND_API_KEY,
   EMAIL_FROM,
-  CONTACT_EMAIL,
   SMTP_USER,
   SMTP_APP_PASSWORD,
   FRONTEND_URL,
@@ -213,7 +212,7 @@ async function verificarVinculoAceito(admin, psicologoId, pacienteId) {
   return { aceito: Boolean(data), error };
 }
 
-async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil, senha }) {
+async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil, senha, preservarCpf = false }) {
   const admin = criarClienteAdmin();
   if (!admin) {
     return { erro: "SUPABASE_SERVICE_ROLE_KEY não configurada no backend.", status: 500 };
@@ -230,6 +229,22 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil, senha }) {
   const rolesAtuais = new Set(Array.isArray(usuario.app_metadata?.roles)
     ? usuario.app_metadata.roles.filter((role) => ["paciente", "psicologo"].includes(role))
     : []);
+  if (preservarCpf) {
+    const tabelaPerfil = perfil === "paciente" ? "pacientes" : "psicologos";
+    const { data: perfilExistente, error: erroPerfilExistente } = await admin
+      .from(tabelaPerfil)
+      .select("cpf")
+      .eq("usuario_id", usuarioId)
+      .maybeSingle();
+    if (erroPerfilExistente) {
+      return { erro: "Não foi possível verificar o CPF cadastrado.", status: 500 };
+    }
+    const cpfExistente = String(perfilExistente?.cpf || "").replace(/\D/g, "");
+    if (cpfExistente.length !== 11) {
+      return { erro: "Não foi possível localizar o CPF cadastrado. Entre em contato com o suporte.", status: 409 };
+    }
+    dadosPerfil.cpf = cpfExistente;
+  }
   let psicologoAprovado = false;
   let perfilAnterior;
   if (perfil === "psicologo" && rolesAtuais.has("psicologo")) {
@@ -413,7 +428,7 @@ app.use(express.json());
 
 registerProfileRoutes(app, {
   SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, EMAIL_FROM,
-  CONTACT_EMAIL, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL, fetch, supabase,
+  SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL, fetch, supabase,
   normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, criarClienteAdmin,
   usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
 });

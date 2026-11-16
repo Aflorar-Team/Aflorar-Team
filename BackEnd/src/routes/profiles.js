@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 export function registerProfileRoutes(app, dependencies) {
   const {
     SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY,
-    EMAIL_FROM, CONTACT_EMAIL, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL,
+    EMAIL_FROM, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL,
     fetch: fetchImpl, createTransport = nodemailer.createTransport,
     supabase, normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth,
     criarClienteAdmin, usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
@@ -149,13 +149,12 @@ export function registerProfileRoutes(app, dependencies) {
 
     const dadosPerfil = {
       nome: String(req.body.nome || "").trim(),
-      cpf: normalizarCpf(req.body.cpf),
       telefone: normalizarTelefone(req.body.telefone),
     };
     if (perfil === "psicologo") dadosPerfil.crp = normalizarCrp(req.body.crp);
-    if (!dadosPerfil.nome || dadosPerfil.nome.length > 100 || dadosPerfil.cpf.length !== 11
+    if (!dadosPerfil.nome || dadosPerfil.nome.length > 100
       || dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
-      return res.status(400).json({ erro: "Confira nome, CPF e telefone antes de salvar." });
+      return res.status(400).json({ erro: "Confira nome e telefone antes de salvar." });
     }
     if (perfil === "psicologo" && !/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp)) {
       return res.status(400).json({ erro: "Informe o CRP no formato UF/número." });
@@ -170,6 +169,7 @@ export function registerProfileRoutes(app, dependencies) {
         perfil,
         dadosPerfil,
         senha: senha || undefined,
+        preservarCpf: true,
       });
       if (resultado.erro) return res.status(resultado.status).json({ erro: resultado.erro });
       return res.json({
@@ -220,34 +220,6 @@ export function registerProfileRoutes(app, dependencies) {
     });
     if (!enviado) return res.status(503).json({ erro: "Não foi possível enviar o e-mail. Tente novamente mais tarde." });
     return res.json({ mensagem: mensagemGenerica });
-  });
-
-  app.post("/api/contato", async (req, res) => {
-    if (excedeuLimite(req, "contato", 5)) {
-      return res.status(429).json({ erro: "Muitas mensagens enviadas. Tente novamente mais tarde." });
-    }
-    const nome = String(req.body.nome || "").trim();
-    const email = String(req.body.email || "").trim().toLowerCase();
-    const mensagem = String(req.body.mensagem || "").trim();
-    if (req.body.website) return res.status(202).json({ mensagem: "Mensagem recebida." });
-    if (!nome || nome.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-      || email.length > 254 || !mensagem || mensagem.length > 5000) {
-      return res.status(400).json({ erro: "Confira nome, e-mail e mensagem." });
-    }
-    if (!emailDisponivel || !CONTACT_EMAIL) {
-      return res.status(503).json({ erro: "O envio de mensagens ainda não está configurado. Tente novamente mais tarde." });
-    }
-
-    const texto = `Mensagem de contato enviada por ${nome} (${email}):\n\n${mensagem}`;
-    const html = `<p>Mensagem de contato enviada por <strong>${escaparHtml(nome)}</strong> (${escaparHtml(email)}):</p><p>${escaparHtml(mensagem).replace(/\n/g, "<br>")}</p>`;
-    const enviado = await enviarEmail({
-      para: CONTACT_EMAIL,
-      assunto: "Nova mensagem pelo site Aflorar",
-      texto,
-      html,
-    });
-    if (!enviado) return res.status(502).json({ erro: "Não foi possível enviar a mensagem. Tente novamente mais tarde." });
-    return res.json({ mensagem: "Mensagem enviada. Obrigado por entrar em contato!" });
   });
 
   app.get("/api/auth-config", (req, res) => {

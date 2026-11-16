@@ -53,8 +53,9 @@
       </div>
 
       <div class="campo">
-        <label>CPF</label>
-        <input type="text" id="cpf" placeholder="000.000.000-00" maxlength="14" />
+        <label for="cpf">CPF</label>
+        <input type="text" id="cpf" placeholder="000.000.000-00" readonly aria-describedby="cpfAjuda" />
+        <small id="cpfAjuda">O CPF não pode ser alterado.</small>
       </div>
 
       <div class="campo">
