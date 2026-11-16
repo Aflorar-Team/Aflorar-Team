@@ -233,6 +233,7 @@ body.private-chat-page {
 .chat-messages {
   display: flex;
   flex: 1;
+  min-height: 0;
   flex-direction: column;
   gap: 10px;
   overflow-y: auto;
@@ -263,6 +264,7 @@ body.private-chat-page {
 .private-message {
   display: flex;
   max-width: min(76%, 560px);
+  flex-shrink: 0;
   flex-direction: column;
   align-self: flex-start;
   gap: 4px;
