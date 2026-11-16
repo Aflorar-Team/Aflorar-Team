@@ -324,12 +324,12 @@ function showResults() {
   const chips = questions
     .map(
       (q) =>
-        `<span style="display:inline-block;margin:3px;padding:4px 10px;border-radius:14px;background:#f3ece6;font-size:13px;">${answers[q.id].texto}</span>`
+        `<span class="chip">${answers[q.id].texto}</span>`
     )
     .join("");
 
   const fechamento = fechamentos[r.intensidade]
-    ? `<hr style="margin:20px 0">
+    ? `<hr>
        <p>${fechamentos[r.intensidade]}</p>
        <p><a href="./chat.html">🌱 Conversar com a Flora</a></p>`
     : "";
@@ -343,22 +343,22 @@ function showResults() {
       ${aviso ? `<p><em>${aviso}</em></p>` : ""}
       ${nota}
 
-      <div style="margin:14px 0">${chips}</div>
+      <div class="chips">${chips}</div>
 
       <h3>O que pode ajudar hoje</h3>
-      <ul style="text-align:left;margin:8px 0 0 18px;">
-        ${dicas.map((d) => `<li style="margin-bottom:6px">${d}</li>`).join("")}
+      <ul class="dicas">
+        ${dicas.map((d) => `<li>${d}</li>`).join("")}
       </ul>
 
-      <hr style="margin:20px 0">
+      <hr>
       ${gerarAcao()}
       ${fechamento}
 
-      <p style="margin-top:20px;font-size:12px;color:#999">
+      <p class="aviso-legal">
         Este check-in é um apoio ao autocuidado e não substitui a avaliação de um profissional.
       </p>
 
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+      <div class="acoes-resultado">
         <button type="button" id="refazer" class="btn-primary">Refazer check-in</button>
         <a href="./inicio.html" class="btn-primary">Voltar ao início</a>
       </div>
