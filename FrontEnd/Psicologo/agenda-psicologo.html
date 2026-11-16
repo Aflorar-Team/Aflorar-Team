@@ -54,7 +54,7 @@
         <div class="legenda-agenda" aria-label="Legenda dos marcadores">
           <span><i class="marcador-compromisso"></i> Compromisso</span>
           <span><i class="marcador-aviso"></i> Aviso</span>
-          <span><i class="marcador-autoaviso"></i> Autoaviso</span>
+          <span><i class="marcador-consulta"></i> Consulta</span>
         </div>
       </section>
 
@@ -70,8 +70,8 @@
           <button id="btnNovoAviso" class="botao botao-aviso" type="button">
             <span aria-hidden="true">+</span> Aviso
           </button>
-          <button id="btnNovoAutoaviso" class="botao botao-autoaviso" type="button">
-            <span aria-hidden="true">+</span> Autoaviso
+          <button id="btnNovaConsulta" class="botao botao-consulta" type="button">
+            <span aria-hidden="true">+</span> Consulta
           </button>
         </div>
 
@@ -127,11 +127,6 @@
       <label for="detalhesEvento">Observações <span>(opcional)</span></label>
       <textarea id="detalhesEvento" name="detalhes" rows="3" maxlength="300"
         placeholder="Anotações para você"></textarea>
-
-      <label id="opcaoNotificacao" class="opcao-notificacao" for="notificarEvento">
-        <input id="notificarEvento" name="notificar" type="checkbox">
-        <span>Avisar neste navegador no horário marcado</span>
-      </label>
 
       <div class="acoes-dialogo">
         <button id="btnCancelarDialogo" class="botao-cancelar" type="button">Cancelar</button>

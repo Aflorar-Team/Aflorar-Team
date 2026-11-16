@@ -199,7 +199,7 @@ export function registerRelationshipRoutes(app, dependencies) {
         .select("id, paciente_id, tipo, titulo, data_evento, hora, detalhes")
         .eq("psicologo_id", autenticacao.user.id)
         .in("paciente_id", idsPacientes)
-        .in("tipo", ["compromisso", "aviso"])
+        .in("tipo", ["compromisso", "aviso", "consulta"])
         .gte("data_evento", hoje)
         .order("data_evento", { ascending: true })
         .order("hora", { ascending: true })
@@ -320,17 +320,13 @@ export function registerRelationshipRoutes(app, dependencies) {
     const hora = String(req.body.hora || "");
     const detalhes = String(req.body.detalhes || "").trim();
     const pacienteId = req.body.paciente_id || null;
-    if (!["compromisso", "aviso", "autoaviso"].includes(tipo)) {
+    if (!["compromisso", "aviso", "consulta"].includes(tipo)) {
       return res.status(400).json({ erro: "Tipo de evento inválido." });
     }
     if (!titulo || titulo.length > 90 || !/^\d{4}-\d{2}-\d{2}$/.test(data)
       || !/^\d{2}:\d{2}$/.test(hora) || detalhes.length > 300) {
       return res.status(400).json({ erro: "Confira título, data, horário e observações do evento." });
     }
-    if (tipo === "autoaviso" && pacienteId) {
-      return res.status(400).json({ erro: "Autoavisos são pessoais; use Aviso para um paciente." });
-    }
-
     const admin = criarClienteAdmin();
     if (!admin) return res.status(503).json({ erro: "Serviço da agenda indisponível." });
     if (pacienteId) {
@@ -347,7 +343,7 @@ export function registerRelationshipRoutes(app, dependencies) {
       data_evento: data,
       hora,
       detalhes: detalhes || null,
-      notificar: tipo === "autoaviso" && req.body.notificar === true,
+      notificar: false,
     }).select("id, tipo, titulo, data_evento, hora, detalhes, notificar, paciente_id").single();
     if (error) {
       console.error("Erro ao salvar evento da agenda:", {

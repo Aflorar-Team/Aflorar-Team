@@ -97,28 +97,28 @@ async function carregarPacientesReais() {
 
       const resumo = criarElemento("div", "resumo-agenda-paciente");
       const eventosFuturos = (paciente.eventos || []).filter(eventoAindaFuturo);
-      const compromisso = eventosFuturos.find((evento) => evento.tipo === "compromisso");
-      const linhaCompromisso = criarElemento("p", "proximo-compromisso");
-      linhaCompromisso.appendChild(criarElemento("strong", "", "Próxima consulta"));
-      linhaCompromisso.appendChild(criarElemento("span", "", compromisso
-        ? `${new Date(`${compromisso.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} às ${compromisso.hora.slice(0, 5)} · ${compromisso.titulo}`
+      const consulta = eventosFuturos.find((evento) => evento.tipo === "consulta");
+      const linhaConsulta = criarElemento("p", "proximo-compromisso");
+      linhaConsulta.appendChild(criarElemento("strong", "", "Próxima consulta"));
+      linhaConsulta.appendChild(criarElemento("span", "", consulta
+        ? `${new Date(`${consulta.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} às ${consulta.hora.slice(0, 5)} · ${consulta.titulo}`
         : "Nenhuma consulta marcada"));
-      if (!compromisso) {
-        linhaCompromisso.appendChild(criarLinkAgendaPaciente(vinculo.paciente_id, "compromisso", "Agendar consulta"));
+      if (!consulta) {
+        linhaConsulta.appendChild(criarLinkAgendaPaciente(vinculo.paciente_id, "consulta", "Agendar consulta"));
       }
-      resumo.appendChild(linhaCompromisso);
+      resumo.appendChild(linhaConsulta);
 
-      const avisosECompromissos = eventosFuturos.filter((evento) => ["aviso", "compromisso"].includes(evento.tipo));
+      const avisosECompromissos = eventosFuturos.filter((evento) => ["aviso", "compromisso", "consulta"].includes(evento.tipo));
       const secaoAvisos = criarElemento("div", "avisos-paciente");
-      secaoAvisos.appendChild(criarElemento("strong", "", "Avisos e compromissos"));
+      secaoAvisos.appendChild(criarElemento("strong", "", "Avisos, compromissos e consultas"));
       if (!avisosECompromissos.length) {
-        secaoAvisos.appendChild(criarElemento("p", "sem-avisos", "Nenhum aviso ou compromisso futuro."));
+        secaoAvisos.appendChild(criarElemento("p", "sem-avisos", "Nenhum evento futuro."));
       } else {
         const listaAvisos = document.createElement("ul");
-        avisosECompromissos.slice(0, 3).forEach((aviso) => {
+        avisosECompromissos.forEach((aviso) => {
           const item = document.createElement("li");
           const dataAviso = new Date(`${aviso.data}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-          const tipoAviso = aviso.tipo === "aviso" ? "Aviso" : "Consulta";
+          const tipoAviso = aviso.tipo === "aviso" ? "Aviso" : aviso.tipo === "consulta" ? "Consulta" : "Compromisso";
           item.textContent = `${dataAviso} · ${tipoAviso}: ${aviso.titulo}`;
           listaAvisos.appendChild(item);
         });
@@ -270,7 +270,7 @@ async function renderizarDemandas() {
     const eventos = resultado.eventos.sort((a, b) => String(a.hora || "").localeCompare(String(b.hora || "")));
     lista.replaceChildren();
     if (!eventos.length) {
-      lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum compromisso, aviso ou autoaviso marcado para hoje."));
+      lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum aviso, compromisso ou consulta marcado para hoje."));
       return;
     }
 
@@ -278,13 +278,31 @@ async function renderizarDemandas() {
       const item = criarElemento("li", "item-demanda");
       const horario = criarElemento("time", "item-horario", evento.hora || "--:--");
       const detalhes = criarElemento("div", "item-demanda-texto");
-      const tipoEvento = evento.tipo === "autoaviso" ? "Autoaviso" : evento.tipo === "aviso" ? "Aviso" : "Compromisso";
+      const tipoEvento = evento.tipo === "consulta"
+        ? "Consulta"
+        : evento.tipo === "aviso" ? "Aviso" : "Compromisso";
       detalhes.appendChild(criarElemento("strong", "", evento.titulo || "Sem título"));
       detalhes.appendChild(criarElemento("span", "", evento.paciente_nome
         ? `${tipoEvento} · ${evento.paciente_nome}`
         : `${tipoEvento} · Geral`));
       if (evento.detalhes) detalhes.appendChild(criarElemento("p", "", evento.detalhes));
-      item.append(horario, detalhes);
+      const concluir = criarElemento("button", "botao-concluir-demanda", "Concluir");
+      concluir.type = "button";
+      concluir.setAttribute("aria-label", `Concluir ${tipoEvento.toLocaleLowerCase("pt-BR")}: ${evento.titulo}`);
+      concluir.addEventListener("click", async () => {
+        concluir.disabled = true;
+        try {
+          await requisicaoApi(`/api/psicologo/eventos/${encodeURIComponent(evento.id)}`, { method: "DELETE" });
+          item.remove();
+          if (!lista.querySelector(".item-demanda")) {
+            lista.appendChild(criarElemento("li", "estado-vazio-popup", "Nenhum aviso, compromisso ou consulta marcado para hoje."));
+          }
+        } catch (error) {
+          concluir.disabled = false;
+          window.alert(error.message);
+        }
+      });
+      item.append(horario, detalhes, concluir);
       lista.appendChild(item);
     });
   } catch (error) {

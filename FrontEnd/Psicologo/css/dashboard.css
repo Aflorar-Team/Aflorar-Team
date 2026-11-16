@@ -213,9 +213,33 @@
 
   .item-demanda {
     display: flex;
+    align-items: center;
     gap: 16px;
     padding: 14px 4px;
     border-bottom: 1px solid #eee7e1;
+  }
+
+  .botao-concluir-demanda {
+    flex: 0 0 auto;
+    margin-left: auto;
+    border: 1px solid #4A7C59;
+    border-radius: 5px;
+    padding: 7px 10px;
+    background: #fff;
+    color: #4A7C59;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .botao-concluir-demanda:hover {
+    background: #f0f6f1;
+  }
+
+  .botao-concluir-demanda:disabled {
+    cursor: wait;
+    opacity: 0.6;
   }
 
   .item-horario {

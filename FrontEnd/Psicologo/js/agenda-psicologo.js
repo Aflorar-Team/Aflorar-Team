@@ -28,7 +28,6 @@ const campoTitulo = document.getElementById("tituloEvento");
 const campoData = document.getElementById("dataEvento");
 const campoHora = document.getElementById("horaEvento");
 const campoDetalhes = document.getElementById("detalhesEvento");
-const campoNotificar = document.getElementById("notificarEvento");
 const campoDestinoEvento = document.getElementById("destinoEvento");
 const campoPacienteEvento = document.getElementById("pacienteEvento");
 const areaPacienteEvento = document.getElementById("selecaoPacienteEvento");
@@ -66,7 +65,6 @@ async function carregarEventosMes() {
     eventos = resultado.eventos;
     renderizarCalendario();
     renderizarEventos();
-    verificarAutoavisos();
   } catch (error) {
     eventos = [];
     renderizarCalendario();
@@ -106,7 +104,7 @@ function criarMarcadores(dia, data) {
   marcadores.className = "marcadores-dia";
   marcadores.setAttribute("aria-hidden", "true");
 
-  ["compromisso", "aviso", "autoaviso"].forEach((tipo) => {
+  ["compromisso", "aviso", "consulta"].forEach((tipo) => {
     if (!tipos.has(tipo)) return;
     const marcador = document.createElement("i");
     marcador.className = `marcador-${tipo}`;
@@ -227,41 +225,13 @@ function renderizarEventos() {
 
     const rotulo = document.createElement("span");
     rotulo.className = "evento-rotulo";
-    const tipoEvento = evento.tipo === "autoaviso" ? "Autoaviso" : evento.tipo === "aviso" ? "Aviso" : "Compromisso";
+    const tipoEvento = evento.tipo === "consulta"
+      ? "Consulta"
+      : evento.tipo === "aviso" ? "Aviso" : "Compromisso";
     rotulo.textContent = evento.paciente_nome ? `${tipoEvento} · ${evento.paciente_nome}` : `${tipoEvento} · Geral`;
     item.appendChild(rotulo);
     listaEventos.appendChild(item);
   });
-}
-
-async function solicitarPermissaoNotificacao() {
-  if (typeof Notification === "undefined" || Notification.permission !== "default") return;
-  try {
-    await Notification.requestPermission();
-  } catch {}
-}
-
-function verificarAutoavisos() {
-  const agora = Date.now();
-  let alterou = false;
-
-  eventos.forEach((evento) => {
-    if (evento.tipo !== "autoaviso" || !evento.notificar || evento.notificado) return;
-    const horario = new Date(`${evento.data}T${evento.hora.slice(0, 5)}:00`).getTime();
-    const atraso = agora - horario;
-    if (atraso < 0) return;
-
-    if (atraso <= 60000 && typeof Notification !== "undefined" && Notification.permission === "granted") {
-      const notificacao = new Notification("Autoaviso Aflorar", {
-        body: `${evento.titulo} • ${evento.hora}`,
-      });
-      notificacao.onclick = () => window.focus();
-    }
-
-    evento.notificado = true;
-    alterou = true;
-  });
-  if (alterou) renderizarEventos();
 }
 
 document.getElementById("btnAnterior").addEventListener("click", () => {
@@ -286,13 +256,13 @@ document.getElementById("btnProximo").addEventListener("click", () => {
 
 document.getElementById("btnNovoCompromisso").addEventListener("click", () => abrirDialogo("compromisso"));
 document.getElementById("btnNovoAviso").addEventListener("click", () => abrirDialogo("aviso"));
-document.getElementById("btnNovoAutoaviso").addEventListener("click", () => abrirDialogo("autoaviso"));
+document.getElementById("btnNovaConsulta").addEventListener("click", () => abrirDialogo("consulta"));
 document.getElementById("btnFecharDialogo").addEventListener("click", () => dialogo.close());
 document.getElementById("btnCancelarDialogo").addEventListener("click", () => dialogo.close());
 campoDestinoEvento.addEventListener("change", atualizarDestinoEvento);
 
 function atualizarDestinoEvento() {
-  const paraPaciente = tipoAtual !== "autoaviso" && campoDestinoEvento.value === "paciente";
+  const paraPaciente = campoDestinoEvento.value === "paciente";
   areaPacienteEvento.hidden = !paraPaciente;
   campoPacienteEvento.disabled = !paraPaciente || pacientesVinculados.length === 0;
   campoPacienteEvento.required = paraPaciente && pacientesVinculados.length > 0;
@@ -303,33 +273,33 @@ function abrirDialogo(tipo) {
   tipoAtual = tipo;
   formulario.reset();
   campoData.value = dataSelecionada;
-  document.getElementById("tipoEventoDialogo").textContent = tipo === "autoaviso" ? "LEMBRETE PESSOAL" : tipo === "aviso" ? "AVISO" : "AGENDA";
-  document.getElementById("tituloDialogo").textContent = tipo === "autoaviso" ? "Novo autoaviso" : tipo === "aviso" ? "Novo aviso" : "Novo compromisso";
-  document.getElementById("opcaoNotificacao").hidden = tipo !== "autoaviso";
-  destinoEventoContainer.hidden = tipo === "autoaviso";
-  campoDestinoEvento.disabled = tipo === "autoaviso";
-  if (tipo !== "autoaviso") {
-    const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
-    if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
-      campoDestinoEvento.value = "paciente";
-      campoPacienteEvento.value = pacienteInicial;
-    }
+  const rotulos = {
+    aviso: { sobrelinha: "AVISO", titulo: "Novo aviso" },
+    compromisso: { sobrelinha: "COMPROMISSO", titulo: "Novo compromisso" },
+    consulta: { sobrelinha: "CONSULTA", titulo: "Nova consulta" },
+  };
+  document.getElementById("tipoEventoDialogo").textContent = rotulos[tipo].sobrelinha;
+  document.getElementById("tituloDialogo").textContent = rotulos[tipo].titulo;
+  destinoEventoContainer.hidden = false;
+  campoDestinoEvento.disabled = false;
+  const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
+  if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
+    campoDestinoEvento.value = "paciente";
+    campoPacienteEvento.value = pacienteInicial;
   }
   atualizarDestinoEvento();
-  campoNotificar.checked = tipo === "autoaviso";
   dialogo.showModal();
   campoTitulo.focus();
 }
 
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
-  if (tipoAtual !== "autoaviso" && campoDestinoEvento.value === "paciente" && !campoPacienteEvento.value) {
+  if (campoDestinoEvento.value === "paciente" && !campoPacienteEvento.value) {
     window.alert(pacientesVinculados.length
       ? "Selecione o paciente que receberá este evento."
       : "Não há pacientes vinculados para selecionar.");
     return;
   }
-  if (tipoAtual === "autoaviso" && campoNotificar.checked) await solicitarPermissaoNotificacao();
   const botaoSalvar = formulario.querySelector(".botao-salvar");
   botaoSalvar.disabled = true;
   try {
@@ -341,10 +311,9 @@ formulario.addEventListener("submit", async (evento) => {
         data: campoData.value,
         hora: campoHora.value,
         detalhes: campoDetalhes.value.trim(),
-        paciente_id: tipoAtual === "autoaviso" || campoDestinoEvento.value !== "paciente"
+        paciente_id: campoDestinoEvento.value !== "paciente"
           ? null
           : campoPacienteEvento.value,
-        notificar: tipoAtual === "autoaviso" && campoNotificar.checked,
       }),
     });
     dataSelecionada = campoData.value;
@@ -365,13 +334,12 @@ async function iniciarAgenda() {
   await carregarEventosMes();
   const parametros = new URLSearchParams(location.search);
   const novoEvento = parametros.get("novo");
-  if (["compromisso", "aviso"].includes(novoEvento)) {
+  if (["compromisso", "aviso", "consulta"].includes(novoEvento)) {
     parametros.delete("novo");
     const query = parametros.toString();
     history.replaceState(null, "", `${location.pathname}${query ? `?${query}` : ""}${location.hash}`);
     abrirDialogo(novoEvento);
   }
-  window.setInterval(verificarAutoavisos, 15000);
 }
 
 iniciarAgenda();

@@ -198,16 +198,16 @@
    background: #547a9a;
  }
 
- .marcador-autoaviso {
+ .marcador-consulta {
    background: #4a7c59;
  }
 
  .dia.hoje .marcador-compromisso,
  .dia.hoje .marcador-aviso,
- .dia.hoje .marcador-autoaviso,
+ .dia.hoje .marcador-consulta,
  .dia.selecionado .marcador-compromisso,
  .dia.selecionado .marcador-aviso,
- .dia.selecionado .marcador-autoaviso {
+ .dia.selecionado .marcador-consulta {
    background: white;
  }
 
@@ -294,7 +294,7 @@
    color: #34506a;
  }
 
- .botao-autoaviso {
+ .botao-consulta {
    background: #e7f0e9;
    color: #315d3e;
  }
@@ -316,7 +316,7 @@
    border-left-color: #547a9a;
  }
 
- .evento.autoaviso {
+ .evento.consulta {
    border-left-color: #4a7c59;
  }
 
@@ -361,7 +361,7 @@
    color: #34506a;
  }
 
- .evento.autoaviso .evento-rotulo {
+ .evento.consulta .evento-rotulo {
    color: #315d3e;
  }
 
