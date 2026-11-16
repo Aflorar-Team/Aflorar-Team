@@ -33,7 +33,25 @@ function criarElemento(tag, classe, texto) {
 }
 
 function eventoAindaFuturo(evento) {
-  return new Date(`${evento.data}T${evento.hora.slice(0, 5)}:00`).getTime() >= Date.now();
+  const agora = Object.fromEntries(new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Recife",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date()).map(({ type, value }) => [type, value]));
+  const horarioAtual = `${agora.year}-${agora.month}-${agora.day}T${agora.hour}:${agora.minute}`;
+  return `${evento.data}T${evento.hora.slice(0, 5)}` >= horarioAtual;
+}
+
+function mostrarErroPopup(mensagem) {
+  popupTitulo.textContent = "Não foi possível concluir";
+  popupConteudo.replaceChildren(criarElemento("p", "", mensagem));
+  modal.setAttribute("aria-hidden", "false");
+  modal.classList.add("active");
+  modalClose?.focus();
 }
 
 function criarLinkAgendaPaciente(pacienteId, tipo, texto) {
@@ -299,7 +317,7 @@ async function renderizarDemandas() {
           }
         } catch (error) {
           concluir.disabled = false;
-          window.alert(error.message);
+          mostrarErroPopup(error.message);
         }
       });
       item.append(horario, detalhes, concluir);

@@ -387,12 +387,31 @@
  }
 
  .dialog-evento {
+   position: fixed;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   margin: 0;
    width: min(460px, calc(100% - 32px));
+   max-height: calc(100vh - 32px);
+   overflow-y: auto;
    border: 0;
    border-radius: 10px;
    padding: 25px;
    color: #302a26;
    box-shadow: 0 18px 60px rgba(33, 25, 20, 0.22);
+ }
+
+ .dialog-mensagem h2 {
+   margin-bottom: 12px;
+   font-size: 19px;
+ }
+
+ .dialog-mensagem p {
+   color: #514842;
+   font-size: 14px;
+   line-height: 1.5;
+   overflow-wrap: anywhere;
  }
 
  .dialog-evento [hidden] {

@@ -19,10 +19,12 @@ let dataSelecionada = formatarData(hoje);
 let tipoAtual = "compromisso";
 let eventos = [];
 let pacientesVinculados = [];
+const pacienteSelecionado = new URLSearchParams(location.search).get("pacienteId");
 
 const grid = document.getElementById("gridDias");
 const listaEventos = document.getElementById("listaEventos");
 const dialogo = document.getElementById("dialogEvento");
+const dialogoMensagem = document.getElementById("dialogMensagem");
 const formulario = document.getElementById("formEvento");
 const campoTitulo = document.getElementById("tituloEvento");
 const campoData = document.getElementById("dataEvento");
@@ -33,6 +35,17 @@ const campoPacienteEvento = document.getElementById("pacienteEvento");
 const areaPacienteEvento = document.getElementById("selecaoPacienteEvento");
 const avisoSemPacientes = document.getElementById("avisoSemPacientes");
 const destinoEventoContainer = document.getElementById("destinoEventoContainer");
+
+function mostrarMensagem(mensagem) {
+  document.getElementById("textoDialogoMensagem").textContent = mensagem;
+  dialogoMensagem.showModal();
+}
+
+function eventosVisiveis() {
+  return pacienteSelecionado
+    ? eventos.filter((evento) => evento.paciente_id === pacienteSelecionado)
+    : eventos;
+}
 
 function formatarData(data) {
   const anoLocal = data.getFullYear();
@@ -84,7 +97,7 @@ async function carregarPacientesVinculados() {
       option.textContent = vinculo.paciente?.nome || "Paciente";
       campoPacienteEvento.appendChild(option);
     });
-    const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
+    const pacienteInicial = pacienteSelecionado;
     if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
       campoDestinoEvento.value = "paciente";
       campoPacienteEvento.value = pacienteInicial;
@@ -97,7 +110,7 @@ async function carregarPacientesVinculados() {
 }
 
 function criarMarcadores(dia, data) {
-  const tipos = new Set(eventos.filter((evento) => evento.data === data).map((evento) => evento.tipo));
+  const tipos = new Set(eventosVisiveis().filter((evento) => evento.data === data).map((evento) => evento.tipo));
   if (!tipos.size) return;
 
   const marcadores = document.createElement("span");
@@ -178,7 +191,7 @@ function renderizarEventos() {
   });
   listaEventos.innerHTML = "";
 
-  const doDia = eventos
+  const doDia = eventosVisiveis()
     .filter((evento) => evento.data === dataSelecionada)
     .sort((a, b) => a.hora.localeCompare(b.hora));
 
@@ -211,7 +224,7 @@ function renderizarEventos() {
         renderizarEventos();
       } catch (error) {
         remover.disabled = false;
-        window.alert(error.message);
+        mostrarMensagem(error.message);
       }
     });
     topo.appendChild(remover);
@@ -259,6 +272,7 @@ document.getElementById("btnNovoAviso").addEventListener("click", () => abrirDia
 document.getElementById("btnNovaConsulta").addEventListener("click", () => abrirDialogo("consulta"));
 document.getElementById("btnFecharDialogo").addEventListener("click", () => dialogo.close());
 document.getElementById("btnCancelarDialogo").addEventListener("click", () => dialogo.close());
+document.getElementById("btnFecharMensagem").addEventListener("click", () => dialogoMensagem.close());
 campoDestinoEvento.addEventListener("change", atualizarDestinoEvento);
 
 function atualizarDestinoEvento() {
@@ -285,7 +299,7 @@ function abrirDialogo(tipo) {
   document.getElementById("tipoEventoDialogo").textContent = rotulos[tipo].sobrelinha;
   document.getElementById("tituloDialogo").textContent = rotulos[tipo].titulo;
   campoDestinoEvento.value = tipo === "consulta" ? "paciente" : "geral";
-  const pacienteInicial = new URLSearchParams(location.search).get("pacienteId");
+  const pacienteInicial = pacienteSelecionado;
   if (pacienteInicial && pacientesVinculados.some((vinculo) => vinculo.paciente_id === pacienteInicial)) {
     campoDestinoEvento.value = "paciente";
     campoPacienteEvento.value = pacienteInicial;
@@ -298,7 +312,7 @@ function abrirDialogo(tipo) {
 formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
   if ((tipoAtual === "consulta" || campoDestinoEvento.value === "paciente") && !campoPacienteEvento.value) {
-    window.alert(pacientesVinculados.length
+    mostrarMensagem(pacientesVinculados.length
       ? tipoAtual === "consulta"
         ? "Selecione o paciente desta consulta."
         : "Selecione o paciente que receberá este evento."
@@ -328,7 +342,7 @@ formulario.addEventListener("submit", async (evento) => {
     dialogo.close();
     await carregarEventosMes();
   } catch (error) {
-    window.alert(error.message);
+    mostrarMensagem(error.message);
   } finally {
     botaoSalvar.disabled = false;
   }
