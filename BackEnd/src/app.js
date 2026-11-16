@@ -413,7 +413,7 @@ app.use(express.json());
 
 registerProfileRoutes(app, {
   SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, EMAIL_FROM,
-  CONTACT_EMAIL, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL, fetch,
+  CONTACT_EMAIL, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL, fetch, supabase,
   normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, criarClienteAdmin,
   usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
 });
