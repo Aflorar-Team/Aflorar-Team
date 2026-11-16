@@ -1,5 +1,92 @@
+import nodemailer from "nodemailer";
+
 export function registerProfileRoutes(app, dependencies) {
-  const { SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, supabase, normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, criarClienteAdmin, usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil } = dependencies;
+  const {
+    SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY,
+    EMAIL_FROM, CONTACT_EMAIL, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL,
+    fetch: fetchImpl, createTransport = nodemailer.createTransport,
+    supabase, normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth,
+    criarClienteAdmin, usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
+  } = dependencies;
+  const enviosRecentes = new Map();
+  const transportadorGmail = SMTP_USER && SMTP_APP_PASSWORD
+    ? createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user: SMTP_USER, pass: SMTP_APP_PASSWORD },
+    })
+    : null;
+  const emailDisponivel = Boolean(transportadorGmail || (RESEND_API_KEY && EMAIL_FROM));
+
+  function excedeuLimite(req, chave, maximo) {
+    const agora = Date.now();
+    if (enviosRecentes.size > 1000) {
+      for (const [id, instantes] of enviosRecentes) {
+        if (!instantes.some((instante) => agora - instante < 15 * 60 * 1000)) enviosRecentes.delete(id);
+      }
+    }
+    const ip = req.ip || req.socket.remoteAddress || "desconhecido";
+    const id = `${chave}:${ip}`;
+    const recentes = (enviosRecentes.get(id) || []).filter((instante) => agora - instante < 15 * 60 * 1000);
+    if (recentes.length >= maximo) {
+      enviosRecentes.set(id, recentes);
+      return true;
+    }
+    recentes.push(agora);
+    enviosRecentes.set(id, recentes);
+    return false;
+  }
+
+  function escaparHtml(valor) {
+    return String(valor).replace(/[&<>"']/g, (caractere) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;",
+    })[caractere]);
+  }
+
+  async function enviarEmail({ para, assunto, texto, html, responderPara }) {
+    if (transportadorGmail) {
+      try {
+        await transportadorGmail.sendMail({
+          from: { name: "Aflorar", address: SMTP_USER },
+          to: para,
+          subject: assunto,
+          text: texto,
+          html,
+          ...(responderPara ? { replyTo: responderPara } : {}),
+        });
+        return true;
+      } catch (error) {
+        console.error("Falha ao enviar e-mail pelo Gmail:", error.code || error.name || "erro desconhecido");
+        return false;
+      }
+    }
+
+    const response = await fetchImpl("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to: [para],
+        subject: assunto,
+        text: texto,
+        html,
+        ...(responderPara ? { reply_to: responderPara } : {}),
+      }),
+    });
+    if (!response.ok) {
+      console.error("O provedor de e-mail recusou a mensagem:", response.status);
+      return false;
+    }
+    return true;
+  }
 
   async function autenticarConta(req) {
     const token = req.headers.authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -49,6 +136,118 @@ export function registerProfileRoutes(app, dependencies) {
       return res.status(500).json({ erro: "Não foi possível salvar o tema da conta." });
     }
     return res.json({ tema });
+  });
+
+  app.put("/api/configuracoes/perfil", async (req, res) => {
+    const autenticacao = await autenticarConta(req);
+    if (autenticacao.erro) return res.status(autenticacao.status).json({ erro: autenticacao.erro });
+    const { perfil, senha } = req.body;
+    if (!["paciente", "psicologo"].includes(perfil)
+      || !usuarioTemPerfil(autenticacao.user, perfil)) {
+      return res.status(403).json({ erro: "Perfil não autorizado para esta conta." });
+    }
+
+    const dadosPerfil = {
+      nome: String(req.body.nome || "").trim(),
+      cpf: normalizarCpf(req.body.cpf),
+      telefone: normalizarTelefone(req.body.telefone),
+    };
+    if (perfil === "psicologo") dadosPerfil.crp = normalizarCrp(req.body.crp);
+    if (!dadosPerfil.nome || dadosPerfil.nome.length > 100 || dadosPerfil.cpf.length !== 11
+      || dadosPerfil.telefone.length < 10 || dadosPerfil.telefone.length > 11) {
+      return res.status(400).json({ erro: "Confira nome, CPF e telefone antes de salvar." });
+    }
+    if (perfil === "psicologo" && !/^\d{2}\/\d{4,8}$/.test(dadosPerfil.crp)) {
+      return res.status(400).json({ erro: "Informe o CRP no formato UF/número." });
+    }
+    if (senha && (senha.length < 6 || senha.length > 20)) {
+      return res.status(400).json({ erro: "A nova senha deve ter entre 6 e 20 caracteres." });
+    }
+
+    try {
+      const resultado = await salvarPerfilConta({
+        usuarioId: autenticacao.user.id,
+        perfil,
+        dadosPerfil,
+        senha: senha || undefined,
+      });
+      if (resultado.erro) return res.status(resultado.status).json({ erro: resultado.erro });
+      return res.json({
+        mensagem: "Dados atualizados com sucesso.",
+        usuario: resultado.usuario,
+        statusPerfil: resultado.statusPerfil,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar dados da conta:", error);
+      return res.status(500).json({ erro: "Não foi possível atualizar os dados da conta." });
+    }
+  });
+
+  app.post("/api/auth/recover", async (req, res) => {
+    if (excedeuLimite(req, "recuperacao", 5)) {
+      return res.status(429).json({ erro: "Muitas solicitações. Aguarde 15 minutos e tente novamente." });
+    }
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return res.status(400).json({ erro: "Informe um e-mail válido." });
+    }
+    if (!emailDisponivel) {
+      return res.status(503).json({ erro: "O envio de e-mails ainda não está configurado no servidor." });
+    }
+    const admin = criarClienteAdmin();
+    if (!admin) return res.status(503).json({ erro: "O serviço de recuperação está indisponível." });
+
+    const mensagemGenerica = "Se houver uma conta com esse e-mail, enviaremos um link para redefinir a senha.";
+    const redirectTo = `${(FRONTEND_URL || "https://aflorar-team.vercel.app").replace(/\/+$/, "")}/redefinir-senha.html`;
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+      options: { redirectTo },
+    });
+    if (error || !data?.properties?.action_link) {
+      if (error && !/user not found|not found/i.test(error.message || "")) {
+        console.error("Não foi possível gerar o link de recuperação:", error);
+      }
+      return res.json({ mensagem: mensagemGenerica });
+    }
+
+    const link = data.properties.action_link;
+    const enviado = await enviarEmail({
+      para: email,
+      assunto: "Redefinição de senha - Aflorar",
+      texto: `Recebemos uma solicitação para redefinir sua senha. Acesse este link: ${link}\n\nSe você não solicitou, ignore esta mensagem.`,
+      html: `<p>Recebemos uma solicitação para redefinir sua senha.</p><p><a href="${escaparHtml(link)}">Criar nova senha</a></p><p>Se você não solicitou, ignore esta mensagem.</p>`,
+    });
+    if (!enviado) return res.status(503).json({ erro: "Não foi possível enviar o e-mail. Tente novamente mais tarde." });
+    return res.json({ mensagem: mensagemGenerica });
+  });
+
+  app.post("/api/contato", async (req, res) => {
+    if (excedeuLimite(req, "contato", 5)) {
+      return res.status(429).json({ erro: "Muitas mensagens enviadas. Tente novamente mais tarde." });
+    }
+    const nome = String(req.body.nome || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const mensagem = String(req.body.mensagem || "").trim();
+    if (req.body.website) return res.status(202).json({ mensagem: "Mensagem recebida." });
+    if (!nome || nome.length > 100 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+      || email.length > 254 || !mensagem || mensagem.length > 5000) {
+      return res.status(400).json({ erro: "Confira nome, e-mail e mensagem." });
+    }
+    if (!emailDisponivel || !CONTACT_EMAIL) {
+      return res.status(503).json({ erro: "O envio de mensagens ainda não está configurado. Tente novamente mais tarde." });
+    }
+
+    const texto = `Mensagem de contato enviada por ${nome} (${email}):\n\n${mensagem}`;
+    const html = `<p>Mensagem de contato enviada por <strong>${escaparHtml(nome)}</strong> (${escaparHtml(email)}):</p><p>${escaparHtml(mensagem).replace(/\n/g, "<br>")}</p>`;
+    const enviado = await enviarEmail({
+      para: CONTACT_EMAIL,
+      assunto: "Nova mensagem pelo site Aflorar",
+      texto,
+      html,
+    });
+    if (!enviado) return res.status(502).json({ erro: "Não foi possível enviar a mensagem. Tente novamente mais tarde." });
+    return res.json({ mensagem: "Mensagem enviada. Obrigado por entrar em contato!" });
   });
 
   app.get("/api/auth-config", (req, res) => {

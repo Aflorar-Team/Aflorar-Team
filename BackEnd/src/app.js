@@ -11,6 +11,12 @@ import {
   SUPABASE_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_URL,
+  RESEND_API_KEY,
+  EMAIL_FROM,
+  CONTACT_EMAIL,
+  SMTP_USER,
+  SMTP_APP_PASSWORD,
+  FRONTEND_URL,
 } from "./config/env.js";
 import { supabase } from "./config/supabase.js";
 
@@ -26,6 +32,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+app.set("trust proxy", 1);
 
 const envFaltando = [
   "SUPABASE_URL",
@@ -206,7 +213,7 @@ async function verificarVinculoAceito(admin, psicologoId, pacienteId) {
   return { aceito: Boolean(data), error };
 }
 
-async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
+async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil, senha }) {
   const admin = criarClienteAdmin();
   if (!admin) {
     return { erro: "SUPABASE_SERVICE_ROLE_KEY não configurada no backend.", status: 500 };
@@ -294,6 +301,7 @@ async function salvarPerfilConta({ usuarioId, perfil, dadosPerfil }) {
 
   const { data, error } = await admin.auth.admin.updateUserById(usuarioId, {
     user_metadata: userMetadata,
+    ...(senha ? { password: senha } : {}),
     app_metadata: {
       ...appMetadata,
       ...(perfil === "psicologo" ? {
@@ -404,7 +412,8 @@ app.use(cors({
 app.use(express.json());
 
 registerProfileRoutes(app, {
-  SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, supabase,
+  SUPABASE_URL, SUPABASE_KEY, SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY, EMAIL_FROM,
+  CONTACT_EMAIL, SMTP_USER, SMTP_APP_PASSWORD, FRONTEND_URL, fetch,
   normalizarCpf, normalizarTelefone, normalizarCrp, criarClienteAuth, criarClienteAdmin,
   usuarioTemPerfil, usuarioComPerfil, salvarPerfilConta, cadastrarPerfil,
 });

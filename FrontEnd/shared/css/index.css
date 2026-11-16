@@ -253,7 +253,8 @@ section {
   color: #7a845c;
 }
 
-.info-item span {
+.info-item span,
+.info-item a {
   display: block;
   margin-top: 5px;
 }
@@ -284,6 +285,24 @@ section {
 .contato-form textarea {
   min-height: 120px;
   resize: none;
+}
+
+.contato-honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+}
+
+.contato-status {
+  min-height: 1.5em;
+  margin-top: 10px;
+  color: #3f4a3c;
+  overflow-wrap: anywhere;
+}
+
+.contato-status:empty {
+  display: none;
 }
 
 /* BOTÃO */

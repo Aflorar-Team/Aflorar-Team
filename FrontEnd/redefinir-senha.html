@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redefinir senha - Aflorar</title>
+  <link rel="stylesheet" href="./shared/css/login.css">
+  <link rel="stylesheet" href="./shared/css/global.css">
+</head>
+
+<body class="oauth-page">
+  <main class="auth-page">
+    <section class="login-card oauth-profile-card" aria-labelledby="tituloRedefinirSenha">
+      <h2 id="tituloRedefinirSenha">Criar nova senha</h2>
+      <form id="formRedefinirSenha">
+        <label for="novaSenha">Nova senha</label>
+        <div class="input-group">
+          <input id="novaSenha" type="password" minlength="6" maxlength="20" autocomplete="new-password" required>
+        </div>
+        <label for="confirmarNovaSenha">Confirme a nova senha</label>
+        <div class="input-group">
+          <input id="confirmarNovaSenha" type="password" minlength="6" maxlength="20" autocomplete="new-password" required>
+        </div>
+        <button id="salvarNovaSenha" type="submit" class="btn-primary">Salvar nova senha</button>
+        <p id="statusRedefinirSenha" role="status" aria-live="polite"></p>
+        <p class="register"><a href="./escolha-tipo-conta.html">Voltar para o login</a></p>
+      </form>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./shared/js/auth-session.js"></script>
+  <script src="./shared/js/redefinir-senha.js"></script>
+</body>
+
+</html>

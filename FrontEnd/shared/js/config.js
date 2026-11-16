@@ -63,16 +63,70 @@ async function sair() {
 }
 
 // Salvar dados
-function salvarDados() {
+async function salvarDados() {
+  const nome = nomeInput.value.trim();
+  const cpf = cpfInput.value.replace(/\D/g, "");
+  const telefone = telefoneInput.value.replace(/\D/g, "");
+  const perfil = localStorage.getItem("tipo");
   const senha = document.getElementById("senha").value;
   const confirmar = document.getElementById("confirmarSenha").value;
+  const botao = document.querySelector(".btn-editar");
 
-  if (senha && senha !== confirmar) {
-    mostrarToast("❌ As senhas não coincidem!", "#E8717A");
+  if (!nome || cpf.length !== 11 || ![10, 11].includes(telefone.length)) {
+    mostrarToast("Confira nome, CPF e telefone antes de salvar.", "#E8717A");
+    return;
+  }
+  if (!["paciente", "psicologo"].includes(perfil)) {
+    mostrarToast("Não foi possível identificar o perfil da conta. Entre novamente.", "#E8717A");
+    return;
+  }
+  if (perfil === "psicologo" && !/^\d{2}\/\d{4,8}$/.test(crpInput.value.trim())) {
+    mostrarToast("Informe o CRP no formato UF/número.", "#E8717A");
+    return;
+  }
+  if ((senha || confirmar) && senha !== confirmar) {
+    mostrarToast("As senhas não coincidem.", "#E8717A");
+    return;
+  }
+  if (senha && (senha.length < 6 || senha.length > 20)) {
+    mostrarToast("A nova senha deve ter entre 6 e 20 caracteres.", "#E8717A");
     return;
   }
 
-  mostrarToast("✅ Dados atualizados com sucesso!");
+  botao.disabled = true;
+  botao.textContent = "Salvando...";
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_URL}/api/configuracoes/perfil`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        perfil,
+        nome,
+        cpf,
+        telefone,
+        ...(perfil === "psicologo" ? { crp: crpInput.value.trim() } : {}),
+        ...(senha ? { senha } : {}),
+      }),
+    });
+    const resultado = await response.json();
+    if (!response.ok) throw new Error(resultado.erro || "Não foi possível atualizar os dados.");
+
+    localStorage.setItem("usuario", JSON.stringify(resultado.usuario));
+    document.getElementById("senha").value = "";
+    document.getElementById("confirmarSenha").value = "";
+    mostrarToast(resultado.statusPerfil === "pendente"
+      ? "Dados salvos. O perfil profissional precisa ser verificado novamente."
+      : "Dados atualizados com sucesso!");
+  } catch (error) {
+    mostrarToast(error.message || "Não foi possível salvar os dados.", "#E8717A");
+  } finally {
+    botao.disabled = false;
+    botao.textContent = "Editar dados";
+  }
 }
 
 function mostrarToast(msg, cor = "#4A7C59") {

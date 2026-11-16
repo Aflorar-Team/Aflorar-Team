@@ -63,7 +63,7 @@
       </div>
 
       <div class="campo">
-        <label>Senha</label>
+        <label for="senha">Nova senha (opcional)</label>
         <div class="input-icon">
           <span>✉️</span>
           <input type="password" id="senha" placeholder="•••••••" />
@@ -72,11 +72,12 @@
 
       <div class="campo">
         <label>Email</label>
-        <input type="email" id="email" placeholder="exemplo@email.com" />
+        <input type="email" id="email" placeholder="exemplo@email.com" readonly aria-describedby="emailAjuda" />
+        <small id="emailAjuda">Para alterar o e-mail, solicite ajuda pelo contato do site.</small>
       </div>
 
       <div class="campo">
-        <label>Confirme sua Senha</label>
+        <label for="confirmarSenha">Confirme a nova senha</label>
         <div class="input-icon">
           <span>🔒</span>
           <input type="password" id="confirmarSenha" placeholder="•••••••" />

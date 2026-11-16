@@ -7,6 +7,7 @@
   <title>Aflorar</title>
   <link rel="stylesheet" href="./shared/css/index.css">
   <link rel="stylesheet" href="./shared/css/global.css">
+  <link rel="stylesheet" href="./shared/css/theme.css">
 </head>
 
 <body>
@@ -14,8 +15,8 @@
   <header>
     <div class="logo">Aflorar</div>
     <nav>
-      <a href="#">Sobre</a>
-      <a href="#">Contato</a>
+      <a href="#sobre">Sobre</a>
+      <a href="#contato">Contato</a>
     </nav>
   </header>
 
@@ -57,7 +58,7 @@
           <div>
             <h3>E-mail</h3>
             <p>Tem alguma dúvida?</p>
-            <span>aflorarapp2025@gmail.com</span>
+            <a href="mailto:aflorarapp2025@gmail.com">aflorar4@gmail.com</a>
           </div>
         </div>
 
@@ -65,24 +66,26 @@
           <div class="icon">📞</div>
           <div>
             <h3>Telefone</h3>
-            <p>Você pode ligar a qualquer hora.</p>
-            <span>81 988422009</span>
+            <p>Você pode contatar a qualquer hora.</p>
+            <a href="tel:+5581997421786">81 997421786</a>
           </div>
         </div>
       </div>
 
       <!-- Form -->
       <form class="contato-form">
-        <label>Nome</label>
-        <input type="text" placeholder="Seu nome">
+        <label for="contatoNome">Nome</label>
+        <input id="contatoNome" name="nome" type="text" placeholder="Seu nome" maxlength="100" required>
 
-        <label>E-mail</label>
-        <input type="email" placeholder="seuemail@exemplo.com">
+        <label for="contatoEmail">E-mail</label>
+        <input id="contatoEmail" name="email" type="email" placeholder="seuemail@exemplo.com" maxlength="254" required>
 
-        <label>Mensagem</label>
-        <textarea placeholder="Escreva sua mensagem aqui..."></textarea>
+        <label for="contatoMensagem">Mensagem</label>
+        <textarea id="contatoMensagem" name="mensagem" placeholder="Escreva sua mensagem aqui..." maxlength="5000" required></textarea>
+        <input name="website" type="text" autocomplete="off" tabindex="-1" aria-hidden="true" class="contato-honeypot">
 
         <button type="submit">Enviar Mensagem</button>
+        <p class="contato-status" role="status" aria-live="polite"></p>
       </form>
 
     </div>
