@@ -15,6 +15,10 @@
   color: var(--theme-text) !important;
 }
 
+:root[data-theme="dark"] body.garden-page {
+  background-color: var(--bg-top) !important;
+}
+
 :root[data-theme="dark"] body * {
   color: var(--theme-text) !important;
 }
@@ -32,39 +36,66 @@
   .welcome,
   .barometro,
   .assinatura,
+  .opcao,
+  .layout,
+  .main,
+  .writing-box,
+  .mood-dropdown,
+  .page-item,
+  .mood-opt,
+  .tag,
+  .nav-btn,
   .boas-vindas,
-  .card-paciente,
   .calendario,
   .painel-dia,
+  .bloco-notas,
+  .texto-anotacao,
+  .painel-lista,
+  .item-demanda,
+  .item-alerta,
+  .form-paciente-codigo,
+  .linha-codigo-paciente,
+  .lista-alertas-paciente,
+  .form-alerta-paciente,
+  .form-alerta-paciente label,
+  .campo-codigo,
+  .dialog-evento,
+  .dialog-mensagem,
+  .titulo-card,
+  .card-grafico,
+  .page-heading,
+  .evolucao-compartilhada,
+  .lista-compartilhadas,
+  .editor-container,
+  .bloco-header,
+  .ferramentas,
+  .card-paciente,
   .modal-content,
-  .chat-container,
-  .chat-sidebar-heading,
-  .chat-contact,
+  .chat-sidebar,
   .chat-conversation,
   .chat-conversation-heading,
+  .chat-contact,
   .private-message,
-  .chat-status,
   .chat-compose,
-  .private-chat-main,
-  .chat-sidebar,
-  .chat-message,
+  .chat-status,
   .chat-messages,
-  .chat-box,
   .chat-input,
+  .chat-box,
+  .chat-container,
+  .form-container,
+  .hero-right,
+  .chat-sidebar-heading,
+  .private-chat-main,
+  .chat-message,
   .quiz-card,
   .quiz-container,
   .paper,
   .sidebar,
-  .titulo-card,
-  .card-grafico,
   .painel-controles,
   .calendario-container,
   .calendario-header,
-  .dia,
   .compromisso,
   .evento,
-  .dialog-evento,
-  .form-container,
   .codigo-paciente,
   .side-card,
   .grafico-container,
@@ -73,13 +104,9 @@
   .modal-backdrop .modal,
   .evolution-panel,
   .evolution-entry,
-  .page-heading,
-  .lista-compartilhadas,
-  .evolucao-compartilhada,
   .anotacao-card,
   .anotacao,
   .painel,
-  .editor-container,
   .anotacoes-container
 ) {
   border-color: var(--theme-border) !important;
@@ -93,10 +120,15 @@
   .chat-search,
   .chat-contact:hover,
   .chat-contact.active,
-  .chat-search,
   .chat-compose textarea,
   input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
   textarea,
+  .editor,
+  .seletor-nota,
+  .campo-codigo input,
+  .form-alerta-paciente input,
+  .form-alerta-paciente select,
+  .tamanho-wrapper select,
   .option,
   .progress-container,
   .field input,
@@ -110,12 +142,103 @@
   .evolution-panel textarea,
   .selecao-paciente select,
   select,
-  .editor,
   .lined-textarea
 ) {
   border-color: var(--theme-border) !important;
   background-color: var(--theme-surface-raised) !important;
   color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] .tag {
+  border-color: var(--theme-border) !important;
+  background-color: var(--theme-surface-raised) !important;
+}
+
+:root[data-theme="dark"] .tag.active,
+:root[data-theme="dark"] .tag:hover {
+  border-color: #9c7658 !important;
+  background-color: #493a31 !important;
+}
+
+:root[data-theme="dark"] .card-link,
+:root[data-theme="dark"] .card-action,
+:root[data-theme="dark"] .assinatura button,
+:root[data-theme="dark"] .breathing-start,
+:root[data-theme="dark"] .mood-trigger,
+:root[data-theme="dark"] .save-btn {
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] .dia {
+  border-color: transparent !important;
+  background-color: transparent !important;
+}
+
+:root[data-theme="dark"] .dia:hover {
+  background-color: var(--theme-surface-raised) !important;
+}
+
+:root[data-theme="dark"] .dia.hoje,
+:root[data-theme="dark"] .dia.selecionado {
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] .botao-compromisso,
+:root[data-theme="dark"] .botao-vincular,
+:root[data-theme="dark"] .btn-acao,
+:root[data-theme="dark"] .btn-exportar,
+:root[data-theme="dark"] .btn-filtro,
+:root[data-theme="dark"] .btn-ferramenta .icone-visual,
+:root[data-theme="dark"] .chat-compose button {
+  color: #fff !important;
+}
+
+:root[data-theme="dark"] .botao-aviso {
+  background-color: #33475b !important;
+  color: #e8f1fb !important;
+}
+
+:root[data-theme="dark"] .botao-consulta {
+  background-color: #304b3a !important;
+  color: #e8f4e9 !important;
+}
+
+:root[data-theme="dark"] .botao-concluir-demanda,
+:root[data-theme="dark"] .botao-remover-alerta,
+:root[data-theme="dark"] .botao-remover {
+  border-color: var(--theme-border) !important;
+  background-color: var(--theme-surface-raised) !important;
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="dark"] .item-demanda,
+:root[data-theme="dark"] .item-alerta,
+:root[data-theme="dark"] .linha-codigo-paciente,
+:root[data-theme="dark"] .painel-lista,
+:root[data-theme="dark"] .lista-alertas-paciente,
+:root[data-theme="dark"] .evolucao-compartilhada {
+  border-color: var(--theme-border) !important;
+}
+
+:root[data-theme="dark"] .chat-avatar {
+  background-color: #35443a !important;
+  color: #e8eaf0 !important;
+}
+
+:root[data-theme="dark"] .private-message.own {
+  border-color: #405444 !important;
+  background-color: #304438 !important;
+}
+
+:root[data-theme="dark"] .chat-messages {
+  background-image: radial-gradient(rgba(190, 198, 208, .08) .7px, transparent .7px);
+}
+
+:root[data-theme="dark"] .btn-salvar-icon,
+:root[data-theme="dark"] .botao-fechar,
+:root[data-theme="dark"] .modal-close,
+:root[data-theme="dark"] .chat-back {
+  color: var(--theme-muted) !important;
 }
 
 :root[data-theme="dark"] :is(
