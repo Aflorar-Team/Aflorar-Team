@@ -135,3 +135,46 @@
 :root[data-theme="escuro"] .admin-button { background-color: #38684f; }
 :root[data-theme="escuro"] .admin-button:hover { background-color: #44795c; }
 :root[data-theme="escuro"] .secondary-button:hover { background-color: #34413a; }
+
+/* Corrige cores claras fixadas nos estilos de cada tela para o tema noturno. */
+:root[data-theme="escuro"] body:not(.garden-page) :is(
+  h1, h2, h3, h4, h5, p, span, label, small, time, li, dt, dd, th, td, legend, strong, em
+) {
+  color: var(--theme-text) !important;
+}
+
+:root[data-theme="escuro"] body:not(.garden-page) :is(
+  footer, .admin-kicker, .review-email, .review-detail span, .admin-status,
+  .chat-sidebar-heading p, .chat-list-state, .chat-contact-time, .chat-contact-preview,
+  .data-selecionada, .estado-vazio, .boas-vindas p, .estado-vazio-pacientes,
+  .dia-semana, .mes-ano, .agenda-legenda, .form-hint, .helper-text
+) {
+  color: var(--theme-muted) !important;
+}
+
+:root[data-theme="escuro"] body:not(.garden-page) :is(
+  .admin-status.is-error, .admin-error, .is-error, .mensagem-erro, .texto-erro
+) {
+  color: #ffaaa9 !important;
+}
+
+:root[data-theme="escuro"] body:not(.garden-page) :is(
+  .admin-status.is-success, .is-success, .mensagem-sucesso, .texto-sucesso
+) {
+  color: #a6d6b2 !important;
+}
+
+/* Mantém cabeçalhos e datas legíveis sobre superfícies noturnas. */
+:root[data-theme="escuro"] :is(.navbar, .topbar) {
+  background-color: var(--theme-surface);
+  border-color: var(--theme-border);
+}
+:root[data-theme="escuro"] .dia:not(.hoje):not(.selecionado) {
+  color: var(--theme-text);
+}
+:root[data-theme="escuro"] .dia.outro-mes:not(.hoje):not(.selecionado) {
+  color: var(--theme-muted);
+}
+:root[data-theme="escuro"] .dia:not(.hoje):not(.selecionado):hover {
+  background-color: var(--theme-surface-raised);
+}
