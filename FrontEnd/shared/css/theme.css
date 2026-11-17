@@ -1,292 +1,137 @@
-:root[data-theme="dark"] {
+/* Tema noturno: superfícies calmas, contraste legível e acentos preservados. */
+:root[data-theme="escuro"] {
   color-scheme: dark;
-  background: #171b24;
-  color: #e8eaf0;
-  --theme-bg: #171b24;
-  --theme-surface: #232936;
-  --theme-surface-raised: #2b3342;
-  --theme-text: #e8eaf0;
-  --theme-muted: #b7bfcc;
-  --theme-border: #414b5b;
+  --theme-bg: #171b20;
+  --theme-surface: #20262b;
+  --theme-surface-raised: #293238;
+  --theme-surface-soft: #242d2e;
+  --theme-text: #edf1eb;
+  --theme-muted: #aebbb4;
+  --theme-border: #394541;
+  --theme-accent: #a6c8ad;
+  --theme-accent-strong: #315b48;
+  --theme-focus: #b6d6bd;
+  color: var(--theme-text);
+  background: var(--theme-bg);
 }
 
-:root[data-theme="dark"] body {
-  background-color: var(--theme-bg) !important;
-  color: var(--theme-text) !important;
+:root[data-theme="escuro"] body {
+  color: var(--theme-text);
+  background-color: var(--theme-bg);
 }
 
-:root[data-theme="dark"] body.garden-page {
-  background-color: var(--bg-top) !important;
+:root[data-theme="escuro"] body.garden-page {
+  background-color: var(--bg-top, var(--theme-bg));
 }
 
-:root[data-theme="dark"] body:not(.garden-page) * {
-  color: var(--theme-text) !important;
-}
-
-:root[data-theme="dark"] :is(
-  .container,
-  .main-content,
-  .content,
-  .page-container,
-  .page-content,
-  .card,
-  .panel,
-  .section,
-  .welcome,
-  .barometro,
-  .assinatura,
-  .opcao,
-  .layout,
-  .main,
-  .writing-box,
-  .mood-dropdown,
-  .page-item,
-  .mood-opt,
-  .tag,
-  .nav-btn,
-  .boas-vindas,
-  .calendario,
-  .painel-dia,
-  .bloco-notas,
-  .texto-anotacao,
-  .painel-lista,
-  .item-demanda,
-  .item-alerta,
-  .form-paciente-codigo,
-  .linha-codigo-paciente,
-  .lista-alertas-paciente,
-  .form-alerta-paciente,
-  .form-alerta-paciente label,
-  .campo-codigo,
-  .dialog-evento,
-  .dialog-mensagem,
-  .titulo-card,
-  .card-grafico,
-  .page-heading,
-  .evolucao-compartilhada,
-  .lista-compartilhadas,
-  .editor-container,
-  .bloco-header,
-  .ferramentas,
-  .card-paciente,
-  .modal-content,
-  .chat-sidebar,
-  .chat-conversation,
-  .chat-conversation-heading,
-  .chat-contact,
-  .private-message,
-  .chat-compose,
-  .chat-status,
-  .chat-messages,
-  .chat-input,
-  .chat-box,
-  .chat-container,
-  .form-container,
-  .hero-right,
-  .chat-sidebar-heading,
-  .private-chat-main,
-  .chat-message,
-  .quiz-card,
-  .quiz-container,
-  .paper,
-  .sidebar,
-  .painel-controles,
-  .calendario-container,
-  .calendario-header,
-  .compromisso,
-  .evento,
-  .codigo-paciente,
-  .side-card,
-  .grafico-container,
-  .stat-card,
-  .pergunta,
-  .evolution-panel,
-  .evolution-entry,
-  .anotacao-card,
-  .anotacao,
-  .painel,
-  .anotacoes-container
+:root[data-theme="escuro"] :is(
+  .container, .main-content, .content, .page-container, .page-content,
+  .card:not(.pink):not(.orange):not(.green):not(.lightpink):not(.paciente):not(.psicologo),
+  .login-card, .modal, .modal-content, .breathing-dialog, .panel, .section,
+  .welcome, .barometro, .assinatura, .opcao, .layout, .main, .writing-box,
+  .mood-dropdown, .page-item, .mood-opt, .tag, .nav-btn, .boas-vindas,
+  .calendario, .painel-dia, .bloco-notas, .texto-anotacao, .painel-lista,
+  .item-demanda, .item-alerta, .form-paciente-codigo, .linha-codigo-paciente,
+  .lista-alertas-paciente, .form-alerta-paciente, .campo-codigo, .dialog-evento,
+  .dialog-mensagem, .titulo-card, .card-grafico, .page-heading,
+  .evolucao-compartilhada, .lista-compartilhadas, .editor-container, .bloco-header,
+  .ferramentas, .card-paciente, .chat-sidebar, .chat-conversation,
+  .chat-conversation-heading, .chat-contact, .private-message, .chat-compose,
+  .chat-status, .chat-messages, .chat-input, .chat-box, .chat-container,
+  .form-container, .hero-right, .chat-sidebar-heading, .private-chat-main,
+  .chat-message, .quiz-card, .quiz-container, .paper, .sidebar,
+  .painel-controles, .calendario-container, .calendario-header, .compromisso,
+  .evento, .codigo-paciente, .side-card, .grafico-container, .stat-card,
+  .pergunta, .evolution-panel, .evolution-entry, .anotacao-card, .anotacao,
+  .anotacoes-container, .admin-header, .admin-login, .review-item,
+  .review-detail, .review-details, .admin-guidance, .secondary-button,
+  .input-group, .btn-google
 ) {
-  border-color: var(--theme-border) !important;
-  background-color: var(--theme-surface) !important;
-  color: var(--theme-text) !important;
+  color: var(--theme-text);
+  border-color: var(--theme-border);
+  background-color: var(--theme-surface);
 }
 
-:root[data-theme="dark"] :is(
-  .chat-conversation,
-  .chat-input,
-  .chat-search,
-  .chat-contact:hover,
-  .chat-contact.active,
-  .chat-compose textarea,
+:root[data-theme="escuro"] :is(
   input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
-  textarea,
-  .editor,
-  .seletor-nota,
-  .campo-codigo input,
-  .form-alerta-paciente input,
-  .form-alerta-paciente select,
-  .tamanho-wrapper select,
-  .option,
-  .progress-container,
-  .field input,
-  .field .input-icon,
-  .campo input,
-  .campo .input-icon,
-  .dialog-evento input,
-  .dialog-evento select,
-  .dialog-evento textarea,
-  .modal-backdrop .field input,
-  .evolution-panel textarea,
-  .selecao-paciente select,
-  select,
-  .lined-textarea
+  textarea, select, .editor, .seletor-nota, .campo-codigo input,
+  .form-alerta-paciente input, .form-alerta-paciente select, .tamanho-wrapper select,
+  .field input, .campo input, .dialog-evento input, .dialog-evento select,
+  .dialog-evento textarea, .evolution-panel textarea, .selecao-paciente select,
+  .lined-textarea, .review-item textarea, .chat-search
 ) {
-  border-color: var(--theme-border) !important;
-  background-color: var(--theme-surface-raised) !important;
-  color: var(--theme-text) !important;
+  color: var(--theme-text);
+  border-color: var(--theme-border);
+  background-color: var(--theme-surface-raised);
 }
 
-:root[data-theme="dark"] .tag {
-  border-color: var(--theme-border) !important;
-  background-color: var(--theme-surface-raised) !important;
+:root[data-theme="escuro"] :is(input, textarea, select)::placeholder {
+  color: var(--theme-muted);
+  opacity: 1;
 }
 
-:root[data-theme="dark"] .tag.active,
-:root[data-theme="dark"] .tag:hover {
-  border-color: #9c7658 !important;
-  background-color: #493a31 !important;
+:root[data-theme="escuro"] :is(button, a, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--theme-focus);
+  outline-offset: 2px;
 }
 
-:root[data-theme="dark"] .card-link,
-:root[data-theme="dark"] .card-action,
-:root[data-theme="dark"] .assinatura button,
-:root[data-theme="dark"] .breathing-start,
-:root[data-theme="dark"] .mood-trigger,
-:root[data-theme="dark"] .save-btn {
-  color: #fff !important;
+:root[data-theme="escuro"] :is(footer, .chat-sidebar-heading p, .chat-list-state,
+  .chat-contact-time, .chat-contact-preview, .data-selecionada, .estado-vazio) {
+  color: var(--theme-muted);
 }
 
-:root[data-theme="dark"] .dia {
-  border-color: transparent !important;
-  background-color: transparent !important;
+:root[data-theme="escuro"] :is(.tag, .chat-contact, .chat-sidebar, .chat-conversation-heading,
+  .item-demanda, .item-alerta, .linha-codigo-paciente, .painel-lista,
+  .lista-alertas-paciente, .evolucao-compartilhada) {
+  border-color: var(--theme-border);
 }
 
-:root[data-theme="dark"] .dia:hover {
-  background-color: var(--theme-surface-raised) !important;
+:root[data-theme="escuro"] :is(.tag.active, .tag:hover, .option.selected) {
+  border-color: #6f9d7b;
+  background-color: #34463b;
 }
 
-:root[data-theme="dark"] .dia.hoje,
-:root[data-theme="dark"] .dia.selecionado {
-  color: #fff !important;
+:root[data-theme="escuro"] :is(.card-link, .card-action, .assinatura button,
+  .breathing-start, .mood-trigger, .save-btn, .botao-compromisso, .botao-vincular,
+  .btn-acao, .btn-exportar, .btn-filtro, .chat-compose button) {
+  color: #f5faf5;
 }
 
-:root[data-theme="dark"] .botao-compromisso,
-:root[data-theme="dark"] .botao-vincular,
-:root[data-theme="dark"] .btn-acao,
-:root[data-theme="dark"] .btn-exportar,
-:root[data-theme="dark"] .btn-filtro,
-:root[data-theme="dark"] .btn-ferramenta .icone-visual,
-:root[data-theme="dark"] .chat-compose button {
-  color: #fff !important;
+:root[data-theme="escuro"] :is(.botao-aviso) { background-color: #344657; color: #e8f1fb; }
+:root[data-theme="escuro"] :is(.botao-consulta) { background-color: #304a3a; color: #e8f4e9; }
+:root[data-theme="escuro"] :is(.botao-concluir-demanda, .botao-remover-alerta, .botao-remover) {
+  color: var(--theme-text); border-color: var(--theme-border); background-color: var(--theme-surface-raised);
 }
-
-:root[data-theme="dark"] .botao-aviso {
-  background-color: #33475b !important;
-  color: #e8f1fb !important;
+:root[data-theme="escuro"] .chat-avatar { background-color: #35483b; color: var(--theme-text); }
+:root[data-theme="escuro"] .private-message.own { border-color: #45644e; background-color: #2d4335; }
+:root[data-theme="escuro"] .chat-messages {
+  background-color: var(--theme-bg);
+  background-image: radial-gradient(rgba(190, 210, 195, .045) .7px, transparent .7px);
 }
+:root[data-theme="escuro"] .message.bot p { background: var(--theme-surface-raised); color: var(--theme-text); }
+:root[data-theme="escuro"] .dia { border-color: transparent; background-color: transparent; }
+:root[data-theme="escuro"] .dia:hover { background-color: var(--theme-surface-raised); }
+:root[data-theme="escuro"] :is(.dia.hoje, .dia.selecionado) { color: #fff; }
+:root[data-theme="escuro"] .page { background: linear-gradient(145deg, #171b20 0%, #202a28 100%); }
+:root[data-theme="escuro"] .admin-guidance { border-left-color: #6d9e7e; }
+:root[data-theme="escuro"] :is(.admin-status.is-error, .admin-error) { color: #ffaaa9; }
+:root[data-theme="escuro"] :is(.menu a, .logo) { color: #f5f7f2; }
 
-:root[data-theme="dark"] .botao-consulta {
-  background-color: #304b3a !important;
-  color: #e8f4e9 !important;
-}
-
-:root[data-theme="dark"] .botao-concluir-demanda,
-:root[data-theme="dark"] .botao-remover-alerta,
-:root[data-theme="dark"] .botao-remover {
-  border-color: var(--theme-border) !important;
-  background-color: var(--theme-surface-raised) !important;
-  color: var(--theme-text) !important;
-}
-
-:root[data-theme="dark"] .item-demanda,
-:root[data-theme="dark"] .item-alerta,
-:root[data-theme="dark"] .linha-codigo-paciente,
-:root[data-theme="dark"] .painel-lista,
-:root[data-theme="dark"] .lista-alertas-paciente,
-:root[data-theme="dark"] .evolucao-compartilhada {
-  border-color: var(--theme-border) !important;
-}
-
-:root[data-theme="dark"] .chat-avatar {
-  background-color: #35443a !important;
-  color: #e8eaf0 !important;
-}
-
-:root[data-theme="dark"] .private-message.own {
-  border-color: #405444 !important;
-  background-color: #304438 !important;
-}
-
-:root[data-theme="dark"] .chat-messages {
-  background-image: radial-gradient(rgba(190, 198, 208, .08) .7px, transparent .7px);
-}
-
-:root[data-theme="dark"] .btn-salvar-icon,
-:root[data-theme="dark"] .botao-fechar,
-:root[data-theme="dark"] .modal-close,
-:root[data-theme="dark"] .chat-back {
-  color: var(--theme-muted) !important;
-}
-
-:root[data-theme="dark"] :is(
-  .navbar,
-  .topbar,
-  .menu a,
-  .logo,
-  .hero,
-  .hero-left,
-  .hero-right,
-  .navbar .logo,
-  .side-btn,
-  .btn-primary,
-  .btn-danger,
-  button
+/* Elementos administrativos usam cores próprias no tema claro. */
+:root[data-theme="escuro"] :is(
+  .admin-brand, .admin-title-row h1, .admin-login h1, .review-item h2,
+  .review-detail strong, .admin-login p
 ) {
-  color-scheme: dark;
+  color: var(--theme-text);
 }
-
-:root[data-theme="dark"] :is(
-  .chat-sidebar-heading p,
-  .chat-list-state,
-  .chat-contact-time,
-  .chat-contact-preview,
-  .data-selecionada,
-  .estado-vazio,
-  footer
+:root[data-theme="escuro"] :is(
+  .admin-brand span, .admin-kicker, .review-email, .review-detail span,
+  .review-check, .admin-status
 ) {
-  color: var(--theme-muted) !important;
+  color: var(--theme-muted);
 }
-
-:root[data-theme="dark"] .chat-contact {
-  border-color: var(--theme-border) !important;
-}
-
-:root[data-theme="dark"] .chat-conversation-heading,
-:root[data-theme="dark"] .chat-sidebar {
-  border-color: var(--theme-border) !important;
-}
-
-:root[data-theme="dark"] .message.bot p {
-  background: var(--theme-surface-raised) !important;
-  color: var(--theme-text) !important;
-}
-
-:root[data-theme="dark"] .option.selected {
-  background: #49353d !important;
-}
-
-:root[data-theme="dark"] .menu a,
-:root[data-theme="dark"] .logo {
-  color: #fff !important;
-}
+:root[data-theme="escuro"] .admin-guidance a { color: #b7dfc4; }
+:root[data-theme="escuro"] .danger-button { color: #ffb7b8; border-color: #704749; }
+:root[data-theme="escuro"] .admin-button { background-color: #38684f; }
+:root[data-theme="escuro"] .admin-button:hover { background-color: #44795c; }
+:root[data-theme="escuro"] .secondary-button:hover { background-color: #34413a; }

@@ -20,7 +20,7 @@
     document.documentElement.dataset.theme = temaValido;
     document.body?.classList.toggle("dark", temaValido === "escuro");
     localStorage.setItem(chaveTema, temaValido);
-    if (!usuario?.id) localStorage.setItem("tema", temaValido);
+    localStorage.setItem("tema", temaValido);
     window.dispatchEvent(new CustomEvent("aflorar:tema-alterado", { detail: temaValido }));
   }
 
