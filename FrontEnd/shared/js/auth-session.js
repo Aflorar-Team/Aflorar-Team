@@ -1,8 +1,8 @@
 (() => {
   const API_URL = "https://aflorar-backend.onrender.com";
   const ROTAS = {
-    paciente: "./inicio.html",
-    psicologo: "./dashboard-psicologo.html",
+    paciente: "./Paciente/inicio.html",
+    psicologo: "./Psicologo/dashboard-psicologo.html",
   };
   let clientePromise;
 
