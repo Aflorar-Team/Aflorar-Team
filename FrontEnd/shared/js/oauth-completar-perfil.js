@@ -9,6 +9,7 @@ const inputCpfGoogle = document.getElementById("cpfGoogle");
 const inputTelefoneGoogle = document.getElementById("telefoneGoogle");
 const inputCrpGoogle = document.getElementById("crpGoogle");
 const botaoSalvarGoogle = document.getElementById("salvarPerfilGoogle");
+const botaoSair = document.getElementById("Logout");
 let sessaoGoogle;
 
 function limparNumeros(valor = "") {
@@ -136,4 +137,9 @@ carregarPerfilGoogle().catch((error) => {
   formularioPerfilGoogle.querySelectorAll("input, button").forEach((campo) => {
     campo.disabled = true;
   });
+});
+botaoSair.addEventListener("click", async () => {
+  const client = await window.AflorarAuth.getClient();
+  await client.auth.signOut({ scope: "local" });
+  window.location.replace("./index.html");
 });
