@@ -10,6 +10,7 @@ const inputTelefoneGoogle = document.getElementById("telefoneGoogle");
 const inputCrpGoogle = document.getElementById("crpGoogle");
 const botaoSalvarGoogle = document.getElementById("salvarPerfilGoogle");
 const botaoSair = document.getElementById("Logout");
+
 let sessaoGoogle;
 
 function limparNumeros(valor = "") {
@@ -124,7 +125,7 @@ formularioPerfilGoogle.addEventListener("submit", async (event) => {
     }, tipoPerfilGoogle);
 
     window.location.replace(tipoPerfilGoogle === "psicologo"
-      ? "./Psicologo/dashboard-psicologo.html"
+      ? "./Psicologo/dashboard-psicologo.html" 
       : "./Paciente/inicio.html");
   } catch (error) {
     mostrarErroPerfil(error.message || "Não foi possível salvar seu perfil.");
